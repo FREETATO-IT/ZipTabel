@@ -8,10 +8,10 @@ namespace ZipTabel.Model
 {
     public class Cell : ICell
     {
-        public string Address { get; private set; } // Например, "A1"
+        public string Address { get; private set; } 
 
         private string _value = string.Empty;
-        private List<string> _charColors = new List<string>(); // Список цветов для каждого символа
+        private List<CharSettings> _charSettings = new List<CharSettings>(); // Список настроек для каждого символа
 
         public string Value
         {
@@ -19,12 +19,12 @@ namespace ZipTabel.Model
             set
             {
                 _value = value;
-                _charColors = new List<string>(new string[value.Length].Select(_ => "#000000")); // Инициализация цветов для каждого символа
+                // Обновление настроек для каждого символа
+                _charSettings = new List<CharSettings>(new CharSettings[value.Length].Select(_ => new CharSettings()));
                 NotifyDependents(); // Обновить зависимые ячейки
             }
         }
 
-        public CellSettings Settings { get; set; }
         public string Formula { get; set; } = string.Empty;
         public bool HasError { get; private set; }
         public List<ICell> Dependencies { get; private set; }
@@ -57,7 +57,6 @@ namespace ZipTabel.Model
             }
         }
 
-        // Уведомить зависимые ячейки о пересчёте
         private void NotifyDependents()
         {
             foreach (var dependent in Dependents)
@@ -66,23 +65,41 @@ namespace ZipTabel.Model
             }
         }
 
-        // Метод для установки цвета конкретного символа
-        public void SetCharColor(int index, string color)
+        public string GetCharColor(int index)
         {
-            if (index >= 0 && index < _charColors.Count)
+            return _charSettings[index].Color;
+        } 
+        public void SetCharColor(int index,string hex)
+        {
+             _charSettings[index].Color = hex;
+        } 
+        public int GetCharSize(int index)
+        {
+            return _charSettings[index].FontSize;
+        } 
+        public void SetCharSize(int index,int size)
+        {
+             _charSettings[index].FontSize = size;
+        }
+
+        public void SetCharSettings(int index, string color, int fontSize, string fontFamily)
+        {
+            if (index >= 0 && index < _charSettings.Count)
             {
-                _charColors[index] = color;
+                var charSetting = _charSettings[index];
+                charSetting.Color = color;
+                charSetting.FontSize = fontSize;
+                charSetting.FontFamily = fontFamily;
             }
         }
 
-        // Метод для получения цвета конкретного символа
-        public string GetCharColor(int index)
+        public CharSettings GetCharSettings(int index)
         {
-            if (index >= 0 && index < _charColors.Count)
+            if (index >= 0 && index < _charSettings.Count)
             {
-                return _charColors[index];
+                return _charSettings[index];
             }
-            return "#000000"; // По умолчанию черный
+            return new CharSettings(); 
         }
     }
 }

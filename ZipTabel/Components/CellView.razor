@@ -1,4 +1,5 @@
-﻿<h3>CellView</h3>
+﻿@inject IJSRuntime JsRuntime
+@using ZipTabel.Model
 
 <div style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;">
     @if (IsFormula)
@@ -9,54 +10,43 @@
     {
         @foreach (var (charValue, index) in Cell.Value?.Select((c, i) => (c, i)) ?? Enumerable.Empty<(char, int)>())
         {
-            <span style="color: @(Cell.GetCharColor(index)); font-size: @(GetCharSize(index))px;">
+            <span style="color: @(Cell.GetCharColor(index)); font-size: @(Cell.GetCharSize(index))px;">
                 @charValue
             </span>
         }
     }
 </div>
 
-<input @oninput="OnUserInputChanged" style="margin-top: 10px; width: 100px;" placeholder="Enter value" />
+<input @oninput="HandleInputChange" @ondblclick="OnCellDoubleClick" style="margin-top: 10px; width: 100px;" placeholder="Enter value" id="userInput" />
 
 @code {
-    [Parameter]
-    public Cell Cell { get; set; } = new Cell("A1"); // Экземпляр ячейки
+    [Parameter] public Cell Cell { get; set; }
 
-    private string UserInput;
-
-    // Проверка: является ли значение формулой
+    private string UserInput ;
+    private bool IsEditing = false;  
     private bool IsFormula => !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
 
-    // Установка значения для UserInput при изменении параметров
-    protected override void OnParametersSet()
+    protected override async Task OnInitializedAsync()
     {
-        UserInput = Cell.Value; // Привязка текущего значения ячейки
+        UserInput = Cell.Value;
+    }
+ 
+
+    private async void OnCellDoubleClick()
+    {
+        IsEditing = true;
+        
+
+        if (String.IsNullOrEmpty(Cell.Value))
+        {
+            Cell.Value = "=";
+        }
+        UserInput = Cell.Value;
     }
 
-    // Метод для получения цвета символа по индексу
-    private string GetCharColor(int index)
+    private void HandleInputChange(ChangeEventArgs e)
     {
-        // Используем метод GetCharColor из класса Cell
-        return Cell.GetCharColor(index);
-    }
-
-    // Метод для получения размера шрифта символа
-    private int GetCharSize(int index)
-    {
-        // Размер шрифта меняется в зависимости от индекса символа
-        return index % 2 == 0 ? 16 : 12;
-    }
-
-    // Метод для обработки изменения текста в input
-    private void OnUserInputChanged(ChangeEventArgs e)
-    {
-        UserInput = e.Value?.ToString() ?? string.Empty;
-        HandleInputChange();
-    }
-
-    // Обработка изменений для значения или формулы
-    private void HandleInputChange()
-    {
+        UserInput = e.Value.ToString();
         if (IsFormula)
         {
             Cell.Formula = UserInput;
@@ -66,5 +56,9 @@
         {
             Cell.Value = UserInput;
         }
+
+        IsEditing = false;  
     }
+
+    private string EditingClass => IsEditing ? "editing" : string.Empty;
 }

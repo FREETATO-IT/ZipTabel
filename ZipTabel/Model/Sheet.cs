@@ -9,11 +9,12 @@ namespace ZipTabel.Model
 {
     public class Sheet
     {
-        private Dictionary<string, Cell> _cells; // Хранение ячеек по их адресу (A1, B2 и т.д.)
+        public Dictionary<string, Cell> _cells; // Хранение ячеек по их адресу (A1, B2 и т.д.)
 
         public Sheet()
         {
             _cells = new Dictionary<string, Cell>();
+           
         }
 
         public Cell GetCell(string address)
@@ -25,6 +26,13 @@ namespace ZipTabel.Model
             return _cells[address];
         }
 
+       public  void AddCell(string address, Cell cell)
+        {
+            if (!_cells.ContainsKey(address))
+            {
+                _cells.Add(address, cell);
+            }
+        }
         public void SetCellFormula(string address, string formula)
         {
             var cell = GetCell(address);
