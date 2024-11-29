@@ -1,0 +1,25 @@
+﻿body
+{
+
+}
+
+.input-cell
+{
+    width: 10em;
+    height: 3em !important;
+    border: 1px solid gray;
+    padding: 0.5em;
+    font-size: 1em;
+}
+
+.main-content
+{
+    padding: 0em !important;
+}
+
+.main-menu-block {
+    /*border-bottom: 1px solid black;*/
+    background-color: #a8c1fa;
+    height: 6em;
+    width: 100%;
+}
