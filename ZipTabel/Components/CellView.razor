@@ -1,5 +1,70 @@
 ﻿<h3>CellView</h3>
 
-@code {
+<div style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;">
+    @if (IsFormula)
+    {
+        <span style="color: blue;">@Cell.Formula</span>
+    }
+    else
+    {
+        @foreach (var (charValue, index) in Cell.Value?.Select((c, i) => (c, i)) ?? Enumerable.Empty<(char, int)>())
+        {
+            <span style="color: @(Cell.GetCharColor(index)); font-size: @(GetCharSize(index))px;">
+                @charValue
+            </span>
+        }
+    }
+</div>
 
+<input @oninput="OnUserInputChanged" style="margin-top: 10px; width: 100px;" placeholder="Enter value" />
+
+@code {
+    [Parameter]
+    public Cell Cell { get; set; } = new Cell("A1"); // Экземпляр ячейки
+
+    private string UserInput;
+
+    // Проверка: является ли значение формулой
+    private bool IsFormula => !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
+
+    // Установка значения для UserInput при изменении параметров
+    protected override void OnParametersSet()
+    {
+        UserInput = Cell.Value; // Привязка текущего значения ячейки
+    }
+
+    // Метод для получения цвета символа по индексу
+    private string GetCharColor(int index)
+    {
+        // Используем метод GetCharColor из класса Cell
+        return Cell.GetCharColor(index);
+    }
+
+    // Метод для получения размера шрифта символа
+    private int GetCharSize(int index)
+    {
+        // Размер шрифта меняется в зависимости от индекса символа
+        return index % 2 == 0 ? 16 : 12;
+    }
+
+    // Метод для обработки изменения текста в input
+    private void OnUserInputChanged(ChangeEventArgs e)
+    {
+        UserInput = e.Value?.ToString() ?? string.Empty;
+        HandleInputChange();
+    }
+
+    // Обработка изменений для значения или формулы
+    private void HandleInputChange()
+    {
+        if (IsFormula)
+        {
+            Cell.Formula = UserInput;
+            Cell.Recalculate();
+        }
+        else
+        {
+            Cell.Value = UserInput;
+        }
+    }
 }
