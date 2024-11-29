@@ -8,7 +8,9 @@ namespace ZipTabel.Model
 {
     public class Cell : ICell
     {
-        public string Address { get; private set; } 
+        public string Address { get; private set; }
+
+        public string CellBeckground="#FFFFF";
 
         private string _value = string.Empty;
         private List<CharSettings> _charSettings = new List<CharSettings>(); // Список настроек для каждого символа

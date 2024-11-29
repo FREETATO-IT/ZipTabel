@@ -6,10 +6,10 @@
 <CellView Cell="@Sheet.GetCell("A1")"></CellView>
 <CellView Cell="@Sheet.GetCell("A2")"></CellView>
 
+
 @code {
     public Sheet Sheet = new Sheet();
 
-    // Этот метод будет вызван при инициализации компонента
     protected override async Task OnInitializedAsync()
     {
         await LoadSheetData();
@@ -23,6 +23,5 @@
         Sheet.AddCell("A2", new Cell("A2"));
     }
 
- 
 }
 
