@@ -7,8 +7,14 @@
     border: 1px solid gray;
     padding: 0.5em;
     font-size: 1em;
+    resize: none;
 }
 
+.input-cell:focus {
+    border: 2px solid green !important;
+    outline: 0 !important;
+}
+    
 .main-content {
     padding: 0em !important;
 }
