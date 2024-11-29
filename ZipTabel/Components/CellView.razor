@@ -1,7 +1,7 @@
 ﻿@inject IJSRuntime JsRuntime
 @using ZipTabel.Model
 
-<div style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;">
+<div @ondblclick="OnCellDoubleClick"  style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;">
     @if (IsFormula)
     {
         <span style="color: blue;">@Cell.Formula</span>
@@ -10,7 +10,7 @@
     {
         @foreach (var (charValue, index) in Cell.Value?.Select((c, i) => (c, i)) ?? Enumerable.Empty<(char, int)>())
         {
-            <span style="color: @(Cell.GetCharColor(index)); font-size: @(Cell.GetCharSize(index))px;">
+            <span  style="color: @(Cell.GetCharColor(index)); font-size: @(Cell.GetCharSize(index))px;">
                 @charValue
             </span>
         }

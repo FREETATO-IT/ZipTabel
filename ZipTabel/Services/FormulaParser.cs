@@ -13,10 +13,7 @@ namespace ZipTabel.Services
     {
         public string Evaluate(string formula, List<ICell> dependencies)
         {
-            // Пример простого парсера: поддержка "+", "-", "*", "/"
-            // TODO: Расширить поддержку функций (например, SUM, AVERAGE)
-
-            // Заменить ссылки на ячейки их значениями
+         
             foreach (var dep in dependencies)
             {
                 formula = formula.Replace(dep.Address, dep.Value);

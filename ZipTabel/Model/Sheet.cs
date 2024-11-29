@@ -38,7 +38,6 @@ namespace ZipTabel.Model
             var cell = GetCell(address);
             cell.Formula = formula;
 
-            // Обновить зависимости
             var parser = new FormulaParser();
             var dependencies = parser.ParseDependencies(formula);
 
