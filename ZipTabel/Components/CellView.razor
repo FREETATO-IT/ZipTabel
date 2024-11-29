@@ -31,18 +31,23 @@
         UserInput = Cell.Value;
     }
  
-
     private async void OnCellDoubleClick()
     {
         IsEditing = true;
-        
 
         if (String.IsNullOrEmpty(Cell.Value))
         {
-            Cell.Value = "=";
+            Cell.Formula = "=";
         }
-        UserInput = Cell.Value;
+
+        if (!string.IsNullOrEmpty(Cell.Formula) && Cell.Formula[0] != '=')
+        {
+            Cell.Formula = "=" + Cell.Formula; 
+        }
+
+        UserInput = Cell.Formula;
     }
+
 
     private void HandleInputChange(ChangeEventArgs e)
     {

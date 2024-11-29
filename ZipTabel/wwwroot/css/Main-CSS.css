@@ -1,10 +1,7 @@
-﻿body
-{
-
+﻿body {
 }
 
-.input-cell
-{
+.input-cell {
     width: 10em;
     height: 3em !important;
     border: 1px solid gray;
@@ -12,8 +9,7 @@
     font-size: 1em;
 }
 
-.main-content
-{
+.main-content {
     padding: 0em !important;
 }
 
