@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ZipTabel.Interfaces;
 
-namespace ZipTabel.Components
+namespace ZipTabel.Services
 {
     public class FormulaParser
     {
@@ -29,7 +29,7 @@ namespace ZipTabel.Components
 
         public List<string> ParseDependencies(string formula)
         {
-            
+
             var matches = Regex.Matches(formula, @"[A-Z]+[0-9]+");
             return matches.Cast<Match>().Select(m => m.Value).ToList();
         }

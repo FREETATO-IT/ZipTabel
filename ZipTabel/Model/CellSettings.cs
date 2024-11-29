@@ -10,19 +10,7 @@ namespace ZipTabel.Model
     public class CellSettings
     {
 
-        public CellSettings()
-        {
-            ForegroundColor = Colors.Black;
-            BackgroundColor= Colors.Transparent;
-            FontSize= 18;
-          
-        }
-        public Color ForegroundColor { get; set; }
-        public Color BackgroundColor { get; set; }
-
-        
-        public FontAttributes FontAttributes { get; set; }
-        public TextDecorations TextDecorations { get; set; }
+     
 
 
         private int _fontSize;
