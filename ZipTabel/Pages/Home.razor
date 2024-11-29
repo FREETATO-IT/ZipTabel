@@ -1,17 +1,28 @@
 ﻿@page "/"
 @using ZipTabel.Components
-
+<h1>HELLO</h1>
 <PageTitle>Home</PageTitle>
-<CellView></CellView>
-<CellView></CellView>
-<CellView></CellView>
-<CellView></CellView>
-<CellView></CellView>
-<CellView></CellView>
-<CellView></CellView>
-<CellView></CellView>
-@code{
 
-    public Sheet Sheet;
+<CellView Cell="@Sheet.GetCell("A1")"></CellView>
+<CellView Cell="@Sheet.GetCell("A2")"></CellView>
 
+@code {
+    public Sheet Sheet = new Sheet();
+
+    // Этот метод будет вызван при инициализации компонента
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSheetData();
+    }
+
+    private async Task LoadSheetData()
+    {
+
+        // Пример заполнения ячеек значениями
+        Sheet.AddCell("A1", new Cell("A1"));
+        Sheet.AddCell("A2", new Cell("A2"));
+    }
+
+ 
 }
+
