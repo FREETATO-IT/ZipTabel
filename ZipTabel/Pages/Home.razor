@@ -167,17 +167,14 @@
         IsSelecting = true; 
         SelectedCells.Clear(); 
         SelectedCells.Add(cell); 
-        // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnMouseDown: {cell.Address}");
     }
 
     private async Task OnMouseMove(Cell cell)
     {
         if (IsSelecting)
         {
-            // Пересчитываем выделенный диапазон
             UpdateSelectedCells(StartCell, cell);
         }
-        // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnMouseMove: {cell.Address}");
     }
 
     private async Task OnMouseUp(Cell cell)
@@ -190,6 +187,10 @@
     // Метод для вычисления диапазона выделения
     private async void UpdateSelectedCells(Cell startCell, Cell endCell)
     {
+        if (startCell.Address == endCell.Address)
+        {
+            return;
+        }
         SelectedCells.Clear();
 
         var (startRow, startCol) = ParseCellAddress(startCell.Address);
