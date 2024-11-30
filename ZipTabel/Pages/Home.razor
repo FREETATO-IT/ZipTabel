@@ -1,9 +1,7 @@
 ﻿@page "/"
 @using ZipTabel.Components
+@inject IJSRuntime JSRuntime
 <PageTitle>Home</PageTitle>
-
-<button @onclick="ExpandRight"> 10 право </button>
-<button @onclick="ExpandDown">Expand 10 вниз</button>
 
 <table border="1">
     <thead>
@@ -33,15 +31,84 @@
     </tbody>
 </table>
 
+<script>
+    let blazorComponent; 
+    //проверка y
+    window.scrollToBottomHandler = () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight - 20;        
+
+    if (scrollTop + windowHeight >= documentHeight) {
+    blazorComponent.invokeMethodAsync('YourBlazorMethodForVerticalScroll');
+    }
+    };
+    //проверка x
+    window.scrollToRightHandler = () => {
+    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+    const windowWidth = window.innerWidth;  
+    const documentWidth = document.documentElement.scrollWidth - 20;  
+
+    if (scrollLeft + windowWidth >= documentWidth) {
+    blazorComponent.invokeMethodAsync('YourBlazorMethodForHorizontalScroll');
+    }
+    };
+    //вызов
+    window.initializeScrollListeners = (dotNetReference) => {
+    blazorComponent = dotNetReference;
+    window.addEventListener('scroll', scrollToBottomHandler);
+    window.addEventListener('scroll', scrollToRightHandler);
+    };
+
+    window.removeScrollListeners = () => {
+    window.removeEventListener('scroll', scrollToBottomHandler);
+    window.removeEventListener('scroll', scrollToRightHandler);
+    };
+</script>
+
 @code {
     public Sheet Sheet = new Sheet();
-    private int TotalRows = 50;  
-    private int TotalCols = 50;  
+    private int TotalRows = 20;        
+    private int TotalCols = 10;  
 
-    protected override async Task OnInitializedAsync()
+    [JSInvokable("YourBlazorMethodForVerticalScroll")]
+    public void YourBlazorMethodForVerticalScroll()
     {
-        await InitializeSheet();
+        TotalRows++;
+        var address = GetCellAddress(TotalRows, 1);  
+        Sheet.AddCell(address, new Cell(address));
+             
+        // Console.WriteLine("y");
+
+        StateHasChanged();
     }
+
+    [JSInvokable("YourBlazorMethodForHorizontalScroll")]
+    public void YourBlazorMethodForHorizontalScroll()
+    {
+        TotalCols++;
+        var address = GetCellAddress(1, TotalCols);   
+        Sheet.AddCell(address, new Cell(address));
+
+        // Console.WriteLine("x");
+
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Передаем ссылку на экземпляр компонента
+            await JSRuntime.InvokeVoidAsync("initializeScrollListeners", DotNetObjectReference.Create(this));
+        }
+    }
+
+    public void Dispose()
+    {
+        JSRuntime.InvokeVoidAsync("removeScrollListeners");
+    }
+
 
     private async Task InitializeSheet()
     {
@@ -55,41 +122,41 @@
         }
     }
 
-    private async Task ExpandRight()
-    {
-        int newTotalCols = TotalCols + 10;
+    // private async Task ExpandRight()
+    // {
+    //     int newTotalCols = TotalCols + 10;
 
-        // Add new columns
-        for (int row = 1; row <= TotalRows; row++)
-        {
-            for (int col = TotalCols + 1; col <= newTotalCols; col++)
-            {
-                var address = GetCellAddress(row, col);
-                Sheet.AddCell(address, new Cell(address));
-            }
-        }
+    //     // Add new columns
+    //     for (int row = 1; row <= TotalRows; row++)
+    //     {
+    //         for (int col = TotalCols + 1; col <= newTotalCols; col++)
+    //         {
+    //             var address = GetCellAddress(row, col);
+    //             Sheet.AddCell(address, new Cell(address));
+    //         }
+    //     }
 
-        TotalCols = newTotalCols;
+    //     TotalCols = newTotalCols;
 
-    }
+    // }
 
-    private async Task ExpandDown()
-    {
-        int newTotalRows = TotalRows + 10;
+    // private async Task ExpandDown()
+    // {
+    //     int newTotalRows = TotalRows + 10;
 
-        for (int row = TotalRows + 1; row <= newTotalRows; row++)
-        {
-            for (int col = 1; col <= TotalCols; col++)
-            {
-                var address = GetCellAddress(row, col);
-                Sheet.AddCell(address, new Cell(address));
-            }
-        }
+    //     for (int row = TotalRows + 1; row <= newTotalRows; row++)
+    //     {
+    //         for (int col = 1; col <= TotalCols; col++)
+    //         {
+    //             var address = GetCellAddress(row, col);
+    //             Sheet.AddCell(address, new Cell(address));
+    //         }
+    //     }
 
-        TotalRows = newTotalRows;
+    //     TotalRows = newTotalRows;      
 
-        StateHasChanged();
-    }
+    //     StateHasChanged();
+    // }      
 
     private string GetCellAddress(int row, int col)
     {
