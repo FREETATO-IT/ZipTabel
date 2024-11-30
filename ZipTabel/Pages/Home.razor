@@ -3,8 +3,8 @@
 <h1>HELLO</h1>
 <PageTitle>Home</PageTitle>
 
-<CellView Cell="@Sheet.GetCell("A1")"></CellView>
-<CellView Cell="@Sheet.GetCell("A2")"></CellView>
+<ZipTabel.Components.CellView Cell="@Sheet.GetCell("A1")"></ZipTabel.Components.CellView>
+@* <ZipTabel.Components.CellView Cell="@Sheet.GetCell("A2")"></ZipTabel.Components.CellView> *@
 
 
 @code {
@@ -20,7 +20,7 @@
 
         // Пример заполнения ячеек значениями
         Sheet.AddCell("A1", new Cell("A1"));
-        Sheet.AddCell("A2", new Cell("A2"));
+        // Sheet.AddCell("A2", new Cell("A2"));
     }
 
 }

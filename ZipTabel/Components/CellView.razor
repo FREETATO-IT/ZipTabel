@@ -1,7 +1,8 @@
 ﻿@inject IJSRuntime JsRuntime
+@inject IJSRuntime JS
 @using ZipTabel.Model
 
-<div style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;">
+<div id="m" style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;" contenteditable="true">
     @if (IsFormula)
     {
         <span style="color: blue;">@Cell.Formula</span>
@@ -16,19 +17,36 @@
         }
     }
 </div>
-<span> @temp </span>
+
 <input @oninput="HandleInputChange" @ondblclick="OnCellDoubleClick" class="input-cell" placeholder="Enter value" id="userInput" />
 
 <script>
-    document.getElementById('userInput').addEventListener('input', function(e){
-      e.target.value = e.target.value.split('2').join("");   
-    });
+    var search = document.getElementById('userInput');
+
+    search.oninput = function() {
+        if (this.value.length == 2 && !isNaN(+this.value)) {
+            document.getElementById("m").focus();
+        }
+        console.log(1);
+    };
 </script>
+
+
+@* <script>
+
+    var temp;
+
+    function showAlert()
+    {
+        var e = document.getElementById('userInput');
+        e.target.value = e.target.value.split('1').join('I');
+    }
+
+
+</script> *@
 
 @code {
     [Parameter] public Cell Cell { get; set; }
-
-    public int temp = 1;
 
     private string UserInput ;
     private bool IsEditing = false;  
@@ -38,7 +56,7 @@
     {
         UserInput = Cell.Value;
     }
- 
+
     private async void OnCellDoubleClick()
     {
         IsEditing = true;
@@ -57,7 +75,7 @@
     }
 
 
-    private void HandleInputChange(ChangeEventArgs e)
+    private /* async */ void HandleInputChange(ChangeEventArgs e)
     {
         UserInput = e.Value.ToString();
         if (IsFormula)
@@ -70,7 +88,9 @@
             Cell.Value = UserInput;
         }
 
-        IsEditing = false;  
+        IsEditing = false;
+
+        /* wait JS.InvokeAsync<string>("showAlert"); */
     }
 
     private string EditingClass => IsEditing ? "editing" : string.Empty;
