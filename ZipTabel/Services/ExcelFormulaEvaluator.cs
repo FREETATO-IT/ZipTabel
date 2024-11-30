@@ -48,15 +48,15 @@ public static class ExcelFormulaEvaluator
         {
             do
             {
-                var arguments = ExtractArguments(formula); 
+                var arguments = ExtractArguments(formula);
 
                 for (int i = 0; i < arguments.Length; i++)
                 {
                     if (Regex.IsMatch(arguments[i], @"[+\-*/^]"))
                     {
                         var result = Evaluate(new string[] { arguments[i] }, dependencies);
-                        mainformula = mainformula.Replace(arguments[i], result);  
-                        formula = mainformula;  
+                        mainformula = mainformula.Replace(arguments[i], result).Replace("=", string.Empty);
+                        formula = mainformula;
                     }
                 }
 
@@ -72,7 +72,7 @@ public static class ExcelFormulaEvaluator
                             if (formulaname.StartsWith(entry.Key, StringComparison.OrdinalIgnoreCase))
                             {
                                 var result = entry.Value(arguments, dependencies);
-                                mainformula = mainformula.Replace(formula, result); 
+                                mainformula = mainformula.Replace(formula, result);
                                 formula = mainformula;
                                 break;
                             }
@@ -92,7 +92,7 @@ public static class ExcelFormulaEvaluator
             {
                 // Оцениваем и заменяем результат в основной формуле
                 var result = Evaluate(new string[] { mainformula }, dependencies);
-                mainformula = mainformula.Replace(mainformula, result);  // Заменяем в mainformula
+                mainformula = mainformula.Replace(mainformula, result).Replace("=", string.Empty);  // Заменяем в mainformula
                 formula = mainformula;  // Обновляем формулу
             }
 
@@ -109,6 +109,10 @@ public static class ExcelFormulaEvaluator
 
         int start = formula.IndexOf('(');
         int end = formula.LastIndexOf(')');
+        if (start == end)
+        {
+            return [formula.Replace("=", string.Empty)];
+        }
         string arg = formula.Substring(start + 1, end - start - 1);
         var arguments = arg.Split(';').Select(arg => arg.Trim()).ToArray();
 
@@ -465,13 +469,12 @@ public static class ExcelFormulaEvaluator
             int exponent = int.Parse(match.Groups[2].Value);
 
             if (exponent <= 0)
-                return "1"; 
+                return "1";
 
             // Генерация строки умножений
             return string.Join("*", new string[exponent].Select(_ => baseNumber.ToString()));
         });
     }
-
     private static string ValidateString(string value)
     {
         int firstQuoteIndex = value.IndexOf('"');
@@ -484,3 +487,4 @@ public static class ExcelFormulaEvaluator
         return value.Replace(" ", "");
     }
 }
+

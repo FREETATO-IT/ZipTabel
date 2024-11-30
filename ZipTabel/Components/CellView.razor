@@ -1,44 +1,62 @@
 ﻿@using System.Timers
 @inject IJSRuntime JSRuntime
 <input @oninput="HandleInputChange"
-       @ondblclick="OnCellDoubleClick"
-       @onkeydown="HandleKeyDown"
-       @bind-value="@UserInput" 
-       style="@Style"
-       class="input-cell @EditingClass"
-       id="@Cell.Address"/>
+@ondblclick="OnCellDoubleClick"
+@onkeydown="HandleKeyDown"
+@onblur="OnInputBlur"
+@bind-value="@UserInput"
+style="@Style"
+class="input-cell @EditingClass"
+id="@Cell.Address" />
 
 @code {
     [Parameter] public Cell Cell { get; set; }
     [Parameter] public string Style { get; set; }
-    private string UserInput { get; set; }
+    private string UserInput { get; set; } = string.Empty;
+
+    private string Buffer { get; set; } = string.Empty;
+
     private bool IsEditing = false;
 
     protected override void OnInitialized()
     {
         UserInput = Cell.Value;
+        Buffer = UserInput;
     }
 
     private async Task HandleInputChange(ChangeEventArgs e)
     {
-     
     }
 
     private void HandleKeyDown(KeyboardEventArgs e)
     {
-        
+        if (e.Key == "Enter")
+        {
+            StateHasChanged();
+        }
+        else if (e.Key == "Escape")
+        {
+            StateHasChanged();
+        }
     }
 
     private void OnCellDoubleClick()
     {
+        Cell.Formula = string.IsNullOrEmpty(Cell.Formula) ? "=" : Cell.Formula;
         Style = "color: blue;";
         IsEditing = true;
+        Buffer = UserInput;
+        UserInput = Cell.Formula;
         StateHasChanged();
-
     }
 
-    private bool IsFormula =>
-        !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
+    private void OnInputBlur()
+    {
+        Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
+        UserInput = Cell.Value;
+        StateHasChanged();
+    }
+    private bool IsFormula => Cell.Formula.StartsWith("=");
 
     private string EditingClass => IsEditing ? "editing" : string.Empty;
 }
