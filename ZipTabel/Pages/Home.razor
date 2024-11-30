@@ -23,11 +23,7 @@
                 {
                     var address = GetCellAddress(row, col);
                     var cell = Sheet.GetCell(address);
-                    <td @onclick="() => OnCellClick(cell)"
-                    @onmousedown="() => OnMouseDown(cell)"
-                    @onmouseup="() => OnMouseUp(cell)"
-                    @onmousemove="() => OnMouseMove(cell)"
-                    style="background-color: @(SelectedCells.Contains(cell) ? "red" : "white")">
+                    <td>
                         <ZipTabel.Components.CellView Cell="@cell" />
                     </td>
                 }
@@ -36,6 +32,79 @@
     </tbody>
 
 </table>
+
+<script>
+    window.initInputHandlers = function() {
+        var tableBody = document.querySelector('tbody');
+        var isMouseDown = false; // Переменная для отслеживания состояния мыши
+        var startCell = null; // Ячейка, с которой начинается выделение
+        var endCell = null; // Ячейка, с которой заканчивается выделение
+
+        // Обработчик mouseup
+        tableBody.addEventListener('mouseup', function(event) {
+            if (event.target.tagName === 'INPUT') {
+                const elementId = event.target.id;
+                console.log(`ID до: ${elementId}`); // Выводим ID элемента в консоль
+            }
+            // Завершение выделения
+            isMouseDown = false; // Сбрасываем состояние
+        });
+
+        // Обработчик mousedown
+        tableBody.addEventListener('mousedown', function(event) {
+            if (event.target.tagName === 'INPUT') {
+                const elementId = event.target.id;
+                console.log(`ID от: ${elementId}`); // Выводим ID элемента в консоль
+
+                isMouseDown = true; // Нажали кнопку мыши
+                startCell = event.target.closest('td'); // Определяем начальную ячейку
+                startCell.classList.add('selected'); // Выделяем начальную ячейку
+
+                Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+                    cell.classList.remove('selected');
+                });
+            }
+        });
+
+        // Выделение области при перемещении мыши
+        tableBody.addEventListener('mousemove', function(event) {
+            if (isMouseDown && event.target.tagName === 'INPUT') {
+                endCell = event.target.closest('td'); // Определяем конечную ячейку
+                highlightCells(startCell, endCell); // Функция для выделения ячеек
+            }
+        });
+
+        // Функция выделения ячеек
+        function highlightCells(startCell, endCell) {
+            // Убираем выделение со всех ячеек
+            Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            // Получаем индексы начальной и конечной ячеек
+            const startRowIdx = startCell.parentElement.rowIndex - 1;
+            const startColIdx = startCell.cellIndex;
+            const endRowIdx = endCell.parentElement.rowIndex - 1;
+            const endColIdx = endCell.cellIndex;
+
+            const rowStart = Math.min(startRowIdx, endRowIdx);
+            const rowEnd = Math.max(startRowIdx, endRowIdx);
+            const colStart = Math.min(startColIdx, endColIdx);
+            const colEnd = Math.max(startColIdx, endColIdx);
+
+            // Выделяем ячейки в области
+            for (let row = rowStart; row <= rowEnd; row++) {
+                for (let col = colStart; col <= colEnd; col++) {
+                    const cell = tableBody.rows[row].cells[col];
+                    if (cell) {
+                        cell.classList.add('selected'); // Добавляем класс выделения
+                    }
+                }
+            }
+        }
+    }
+</script>
+
 
 <script>
     let blazorComponent;
@@ -115,6 +184,7 @@
     {
         if (firstRender)
         {
+            await JSRuntime.InvokeVoidAsync("initInputHandlers");
             // Передаем ссылку на экземпляр компонента
             await JSRuntime.InvokeVoidAsync("initializeScrollListeners", DotNetObjectReference.Create(this));
         }
@@ -238,3 +308,21 @@
         return (row, col);
     }
 }
+
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    th, td {
+        border: 1px solid #cccccc;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .highlighted {
+        background-color: lightblue;
+    }
+</style>
