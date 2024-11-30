@@ -1,34 +1,83 @@
-﻿@inject IJSRuntime JsRuntime
-@using ZipTabel.Model
-@using ZipTabel.Pages
-<input @oninput="HandleInputChange"
+﻿@using System.Timers
+@inject IJSRuntime JSRuntime
+<input @ref="inputElement"
+       @oninput="HandleInputChange"
        @ondblclick="OnCellDoubleClick"
        @onkeydown="HandleKeyDown"
+       @bind-value="@UserInput" 
        style="@Style"
        class="input-cell @EditingClass"
-       id="@Cell.Address"
-       value="@UserInput" />
+       id="@Cell.Address"/>
+
 @code {
     [Parameter] public Cell Cell { get; set; }
+    [Parameter] public EventCallback<Cell> OnValueChanged { get; set; }
     [Parameter] public string Style { get; set; }
-
+    private async Task LogCellValue()
+    {
+        await JSRuntime.InvokeVoidAsync("window.cellHandler.logCellValue", UserInput);
+    }
+    private ElementReference inputElement;
     private string UserInput { get; set; }
     private bool IsEditing = false;
-    private bool IsFormula => !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
+    private CancellationTokenSource _debounceCts = new CancellationTokenSource();
 
     protected override void OnInitialized()
     {
         UserInput = Cell.Value;
     }
-   
+
+    private async Task HandleInputChange(ChangeEventArgs e)
+    {
+        // Cancel any previous debounce operation
+        _debounceCts.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        UserInput = e.Value?.ToString() ?? string.Empty;
+
+        try
+        {
+            await Task.Delay(300, token); // Debounce delay
+
+            if (token.IsCancellationRequested) return;
+
+            // Process input
+            if (IsFormula)
+            {
+                Cell.Formula = UserInput;
+                Cell.Recalculate();
+            }
+            else
+            {
+                Cell.Value = UserInput;
+            }
+
+            // Notify parent component of value change
+            await OnValueChanged.InvokeAsync(Cell);
+
+            Style = "color: black;";
+            IsEditing = false;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+            // Debounce was canceled, do nothing
+        }
+    }
+
     private void HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.CtrlKey)
         {
-            UserInput = Cell.Address;
-            Cell.Value = Cell.Address;
-            Style = "color: green;";
-            StateHasChanged();
+            // Minimize re-renders
+            if (UserInput != Cell.Address)
+            {
+                UserInput = Cell.Address;
+                Cell.Value = Cell.Address;
+                Style = "color: green;";
+                StateHasChanged();
+            }
         }
     }
 
@@ -42,31 +91,15 @@
         {
             Cell.Formula = "=";
         }
-
         if (!string.IsNullOrEmpty(Cell.Formula) && Cell.Formula[0] != '=')
         {
             Cell.Formula = "=" + Cell.Formula;
         }
-
         UserInput = Cell.Formula ?? Cell.Value;
     }
 
-    private void HandleInputChange(ChangeEventArgs e)
-    {
-        UserInput = e.Value?.ToString() ?? string.Empty;
-        CellManager.SetValue(UserInput);
-        if (IsFormula)
-        {
-            Cell.Formula = UserInput;
-            Cell.Recalculate();
-        }
-        else
-        {
-            Cell.Value = UserInput;
-        }
-        Style = "color: black;";
-        IsEditing = false;
-        StateHasChanged();
-    }
+    private bool IsFormula =>
+        !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
+
     private string EditingClass => IsEditing ? "editing" : string.Empty;
 }

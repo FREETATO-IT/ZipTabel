@@ -41,7 +41,12 @@ namespace ZipTabel.Model
             IsLocked = false;
         }
 
-        // Метод пересчёта значения
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(Formula) &&
+                   string.IsNullOrEmpty(Value);
+        }
+
         public void Recalculate()
         {
             if (string.IsNullOrEmpty(Formula)) return;

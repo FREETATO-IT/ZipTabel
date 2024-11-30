@@ -1,7 +1,16 @@
 ﻿//script.js
+
+window.logToConsole = function (message) {
+    console.log(message);
+};
+
+
 window.cellHandler = {
     setFormulaInputValue: function (value) {
-        console.log(`Formula input value: ${value}`);
-    }
 
+
+    },
+    logCellValue: function (value) {
+        console.log('Cell Value:', value);
+    }
 };

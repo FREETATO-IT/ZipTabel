@@ -4,6 +4,7 @@
 <PageTitle>Home</PageTitle>
 <script src="js/script.js"></script>
 
+<button @onclick="Save"> </button>
 <table border="1">
     <thead>
         <tr>
@@ -69,7 +70,7 @@
 
 
 @code {
-    public Sheet Sheet = new Sheet();
+    public Sheet Sheet = new Sheet("Лист1");
     private int TotalRows = 50;
     private int TotalCols = 50;
     protected override async Task OnInitializedAsync()
@@ -127,7 +128,7 @@
         }
     }
 
-    
+
 
     private string GetCellAddress(int row, int col)
     {
@@ -152,5 +153,11 @@
         await JSRuntime.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
     }
 
-   
+
+    private async Task Save(MouseEventArgs e)
+    {
+        await JSRuntime.InvokeVoidAsync("logToConsole", Sheet.Setalize());
+    }
+
+
 }
