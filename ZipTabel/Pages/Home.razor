@@ -4,7 +4,6 @@
 <PageTitle>Home</PageTitle>
 <script src="js/script.js"></script>
 
-<button @onclick="Save"> </button>
 <table border="1">
     <thead>
         <tr>
@@ -25,7 +24,7 @@
                     var address = GetCellAddress(row, col);
                     var cell = Sheet.GetCell(address);
                     <td @onclick="() => OnCellClick(cell)">
-                        <ZipTabel.Components.CellView  Cell="@cell" />
+                        <ZipTabel.Components.CellView Cell="@cell" />
                     </td>
                 }
             </tr>
@@ -71,8 +70,10 @@
 
 @code {
     public Sheet Sheet = new Sheet("Лист1");
-    private int TotalRows = 50;
-    private int TotalCols = 50;
+    private int TotalRows = 30;
+    private int TotalCols = 30;
+    private int maxWidth;
+
     protected override async Task OnInitializedAsync()
     {
         await InitializeSheetAsync();
@@ -118,14 +119,14 @@
 
     private async Task InitializeSheetAsync()
     {
-        for (int row = 1; row <= TotalRows; row++)
-        {
-            for (int col = 1; col <= TotalCols; col++)
-            {
-                var address = GetCellAddress(row, col);
-                Sheet.AddCell(address, new Cell(address));
-            }
-        }
+        // for (int row = 1; row <= TotalRows; row++)
+        // {
+        //     for (int col = 1; col <= TotalCols; col++)
+        //     {
+        //         var address = GetCellAddress(row, col);
+        //         Sheet.AddCell(address, new Cell(address));
+        //     }
+        // }
     }
 
 
@@ -152,12 +153,5 @@
     {
         await JSRuntime.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
     }
-
-
-    private async Task Save(MouseEventArgs e)
-    {
-        await JSRuntime.InvokeVoidAsync("logToConsole", Sheet.Setalize());
-    }
-
 
 }
