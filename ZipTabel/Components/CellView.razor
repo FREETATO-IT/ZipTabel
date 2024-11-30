@@ -2,7 +2,7 @@
 @inject IJSRuntime JS
 @using ZipTabel.Model
 
-<div id="m" style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;" contenteditable="true">
+@* <div id="m" style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;" contenteditable="true">
     @if (IsFormula)
     {
         <span style="color: blue;">@Cell.Formula</span>
@@ -16,11 +16,11 @@
             </span>
         }
     }
-</div>
+</div> *@
 
 <input @oninput="HandleInputChange" @ondblclick="OnCellDoubleClick" class="input-cell" placeholder="Enter value" id="userInput" />
 
-<script>
+@* <script>
     var search = document.getElementById('userInput');
 
     search.oninput = function() {
@@ -30,7 +30,7 @@
         console.log(1);
     };
 </script>
-
+ *@
 
 @* <script>
 
@@ -90,7 +90,7 @@
 
         IsEditing = false;
 
-        /* wait JS.InvokeAsync<string>("showAlert"); */
+        /* await JS.InvokeAsync<string>("showAlert"); */
     }
 
     private string EditingClass => IsEditing ? "editing" : string.Empty;
