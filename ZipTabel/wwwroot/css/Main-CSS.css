@@ -2,13 +2,14 @@
 }
 
 .input-cell {
-    width: 10em;
+    width: 7em;
     height: 3em !important;
     padding: 0.5em;
     font-size: 1em;
     resize: none;
     border: 0 !important;
     background-color: rgba(0,0,0,0.0);
+    padding-right: 0;
 }
 
 .input-cell:focus td {
@@ -39,4 +40,5 @@ td {
 .selected {
     background-color: #97e997; /* Укажите нужный вам цвет */
     border: 2px solid green;
+    padding: 0 !important;
 }

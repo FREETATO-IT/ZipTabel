@@ -35,40 +35,58 @@
 
 @* <script>
     window.initScrollDrag = function() {
-        const scrollContainer = document.body;
         let isMouseDown = false; // Чтобы отслеживать состояние мыши
         let startY; // Начальная позиция мыши
 
-        // Обработчик mousedown
-        scrollContainer.addEventListener('mousedown', function(event) {
-            isMouseDown = true; // Активируем режим перетаскивания
-            startY = event.pageY - scrollContainer.offsetTop; // Вычисляем начальную позицию
-            scrollContainer.style.cursor = 'grabbing'; // Меняем курсор
+        let temp = 0;
+        let walk;
 
-            // Если вы хотите вызвать метод на сервере при начале перетаскивания:
-            // dotnetHelper.invokeMethodAsync('OnDragStart');
+        // Обработчик mousedown
+        document.addEventListener('mousedown', function(event) {
+            isMouseDown = true; // Активируем режим перетаскивания
+            startY = event.pageY; // Сохраняем начальную позицию Y
+            document.body.style.cursor = 'grabbing'; // Меняем курсор
         });
 
         // Обработчик mouseup
         document.addEventListener('mouseup', function() {
             isMouseDown = false; // Деактивируем режим перетаскивания
-            scrollContainer.style.cursor = 'grab'; // Возвращаем курсор обратно
-
-            // Если вы хотите вызвать метод на сервере при окончании перетаскивания:
-            // dotnetHelper.invokeMethodAsync('OnDragEnd');
+            temp = 0;
+            document.body.style.cursor = 'grab'; // Возвращаем курсор обратно
         });
 
         // Обработчик mousemove
-        scrollContainer.addEventListener('mousemove', function(event) {
+        document.addEventListener('mousemove', function(event) {
             if (!isMouseDown) return; // Если не перетаскиваем, выходим
 
+            if(walk >= 0)
+                temp++;
+            else
+                temp--;
+
+            //console.log(temp);
+
             event.preventDefault(); // Предотвращаем выделение текста при прокрутке
-            const y = event.pageY - scrollContainer.offsetTop; // Текущая позиция мыши
-            const walk = (y - startY) * 2; // Параметр, контролирующий скорость прокрутки
-            scrollContainer.scrollTop -= walk; // Прокручиваем контейнер
+            const y = event.pageY; // Текущая позиция мыши
+            walk = (y - startY) * 4; // Параметр, контролирующий скорость прокрутки
+
             startY = y; // Обновляем начальную позицию для следующего движения
+
+                        console.log(walk);
         });
+
+        setInterval(intervalId, 0);
+
+        function intervalId() {
+            if(temp > 100)
+                window.scrollBy(0, +walk); // Прокручиваем тело документа
+            else if(temp < 0)
+                window.scrollBy(0, +walk); // Прокручиваем тело документа
+
+            console.log(walk);
+        }
     };
+
 </script> *@
 
 <script>
