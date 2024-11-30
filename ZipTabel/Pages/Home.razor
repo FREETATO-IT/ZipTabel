@@ -159,7 +159,7 @@
 
     private async Task OnCellClick(Cell cell)
     {
-        await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnCellClick{cell.Address}");
+        // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnCellClick{cell.Address}");
     }
     private async Task OnMouseDown(Cell cell)
     {
@@ -171,24 +171,27 @@
 
     private async Task OnMouseMove(Cell cell)
     {
+
         if (IsSelecting)
         {
-            UpdateSelectedCells(StartCell, cell);
+            await UpdateSelectedCells(StartCell, cell);
         }
     }
 
     private async Task OnMouseUp(Cell cell)
     {
+        
         IsSelecting = false; // Завершаем процесс выделения
-        UpdateSelectedCells(StartCell, cell); // Обновляем финальный диапазон
+        await UpdateSelectedCells(StartCell, cell); // Обновляем финальный диапазон
                                               // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnMouseUp: {cell.Address}");
     }
 
     // Метод для вычисления диапазона выделения
-    private async void UpdateSelectedCells(Cell startCell, Cell endCell)
+    private async Task UpdateSelectedCells(Cell startCell, Cell endCell)
     {
         if (startCell.Address == endCell.Address)
         {
+            SelectedCells.Clear();
             return;
         }
         SelectedCells.Clear();
