@@ -23,9 +23,12 @@
                 {
                     var address = GetCellAddress(row, col);
                     var cell = Sheet.GetCell(address);
-                    <td @onclick="() => OnCellClick(cell)">
+                    <td @onclick="() => OnCellClick(cell)"
+                        @onmousedown="() => OnMouseDown(cell)"
+                        @onmouseup="() => OnMouseUp(cell)">
                         <ZipTabel.Components.CellView Cell="@cell" />
                     </td>
+
                 }
             </tr>
         }
@@ -151,7 +154,14 @@
 
     private async Task OnCellClick(Cell cell)
     {
-        await JSRuntime.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
+        await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnCellClick{cell.Address}");
     }
-
+    private async Task OnMouseDown(Cell cell)
+    {
+        await JSRuntime.InvokeVoidAsync("window.logToConsole", $" OnMouseDown{cell.Address}");
+    }
+    private async Task OnMouseUp(Cell cell)
+    {
+        await JSRuntime.InvokeVoidAsync("window.logToConsole", $" OnMouseUp{cell.Address}");
+    }
 }
