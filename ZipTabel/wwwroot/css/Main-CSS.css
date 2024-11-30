@@ -28,9 +28,18 @@
 
 .main-menu-block {
     /*border-bottom: 1px solid black;*/
-    background-color: #a8c1fa;
-    height: 6em;
+    height: 10em;
     width: 100%;
+}
+
+.head-menu {
+    height: 6em;
+    background-color: #97e997;
+}
+
+.footer-menu {
+    height: 4em;
+    background-color: #545454;
 }
 
 td {

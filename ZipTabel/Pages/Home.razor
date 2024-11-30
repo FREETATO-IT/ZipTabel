@@ -4,6 +4,8 @@
 <PageTitle>Home</PageTitle>
 <script src="js/script.js"></script>
 
+<MainMenu></MainMenu>
+
 <table border="1">
     <thead>
         <tr>
@@ -88,6 +90,63 @@
     };
 
 </script> *@
+
+<script>
+    function checkFirstCharacter(inputElement) {
+        const value = inputElement.value; // Получаем текущее значение поля ввода
+        const inputElements = document.querySelectorAll(".input-cell");
+
+        if (value.charAt(0) === "=") {
+            console.log(`Первый символ в элементе с id ${inputElement.id} равен '='`);
+            // Уведомляем Blazor, если первый символ равен "="
+            //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
+            inputElements.forEach(el => {
+                if (el !== inputElement) {
+                    el.readOnly = true; // Отключаем все, кроме текущего
+                }
+            });
+        } else {
+            inputElements.forEach(el => {
+                el.readOnly = false; // Отключаем все, кроме текущего
+            });
+            console.log(`Первый символ в элементе с id ${inputElement.id} не равен '='`);
+        }
+    }
+
+    // Инициализация обработчика события input на всех элементах
+    function initInputChecks() {
+        const inputElements = document.querySelectorAll(".input-cell"); // Замените на ваш класс
+        inputElements.forEach(function(inputElement) {
+            inputElement.addEventListener("input", function() {
+                checkFirstCharacter(inputElement);
+            });
+        });
+    }
+
+    // Функция для наблюдения за изменениями в контейнере
+    function observeInputChanges(container) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === "childList") {
+                    // Если добавлены новые узлы (input элементы)
+                    initInputChecks(); // Переинициализируем обработчики для новых input
+                }
+            });
+        });
+
+        observer.observe(container, {
+            childList: true, // Наблюдаем за добавлением/удалением дочерних элементов
+            subtree: true // Наблюдаем за изменениями также и в дочерних узлах
+        });
+    }
+
+    // Вызов функций инициализации
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputContainer = document.querySelector("#input-container"); // Укажите ваш контейнер с input
+        initInputChecks(); // Инициализируем обработчики для существующих input
+        observeInputChanges(inputContainer); // Начинаем наблюдение за изменениями
+    });
+</script>
 
 <script>
     window.initInputHandlers = function(dotnetHelper) {
@@ -254,6 +313,8 @@
             await JSRuntime.InvokeVoidAsync("initInputHandlers", dotnetHelper);
 
             await JSRuntime.InvokeVoidAsync("initializeScrollListeners", DotNetObjectReference.Create(this));
+
+            await JSRuntime.InvokeVoidAsync("initInputChecks"); // Инициализируем проверку
 
             // await JSRuntime.InvokeVoidAsync("initScrollDrag");
         }
