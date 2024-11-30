@@ -1,10 +1,11 @@
 ﻿@page "/"
 @using ZipTabel.Components
+@inject IJSRuntime JS
 <PageTitle>Home</PageTitle>
+<script src="js/script.js"></script>
 
-<button @onclick="ExpandRight"> 10 право </button>
+<button @onclick="ExpandRight">10 вправо</button>
 <button @onclick="ExpandDown">Expand 10 вниз</button>
-
 <table border="1">
     <thead>
         <tr>
@@ -24,8 +25,8 @@
                 {
                     var address = GetCellAddress(row, col);
                     var cell = Sheet.GetCell(address);
-                    <td>
-                        <ZipTabel.Components.CellView Cell="@cell" />
+                    <td @onclick="() => OnCellClick(cell)">
+                        <ZipTabel.Components.CellView  Cell="@cell" />
                     </td>
                 }
             </tr>
@@ -35,15 +36,14 @@
 
 @code {
     public Sheet Sheet = new Sheet();
-    private int TotalRows = 50;  
-    private int TotalCols = 50;  
-
+    private int TotalRows = 50;
+    private int TotalCols = 50;
     protected override async Task OnInitializedAsync()
     {
-        await InitializeSheet();
+        await InitializeSheetAsync();
     }
 
-    private async Task InitializeSheet()
+    private async Task InitializeSheetAsync()
     {
         for (int row = 1; row <= TotalRows; row++)
         {
@@ -59,35 +59,40 @@
     {
         int newTotalCols = TotalCols + 10;
 
-        // Add new columns
+        var tasks = new List<Task>(); // Список задач для асинхронной обработки
+
         for (int row = 1; row <= TotalRows; row++)
         {
             for (int col = TotalCols + 1; col <= newTotalCols; col++)
             {
                 var address = GetCellAddress(row, col);
-                Sheet.AddCell(address, new Cell(address));
+                tasks.Add(Task.Run(() => Sheet.AddCell(address, new Cell(address))));
             }
         }
 
-        TotalCols = newTotalCols;
+        await Task.WhenAll(tasks);
 
+        TotalCols = newTotalCols;
     }
 
     private async Task ExpandDown()
     {
         int newTotalRows = TotalRows + 10;
 
+        var tasks = new List<Task>();
+
         for (int row = TotalRows + 1; row <= newTotalRows; row++)
         {
             for (int col = 1; col <= TotalCols; col++)
             {
                 var address = GetCellAddress(row, col);
-                Sheet.AddCell(address, new Cell(address));
+                tasks.Add(Task.Run(() => Sheet.AddCell(address, new Cell(address))));
             }
         }
 
-        TotalRows = newTotalRows;
+        await Task.WhenAll(tasks);
 
+        TotalRows = newTotalRows;
         StateHasChanged();
     }
 
@@ -99,7 +104,7 @@
     private string GetColumnLetter(int col)
     {
         int dividend = col;
-        string columnLetter = String.Empty;
+        string columnLetter = string.Empty;
         while (dividend > 0)
         {
             int modulo = (dividend - 1) % 26;
@@ -108,4 +113,11 @@
         }
         return columnLetter;
     }
+
+    private async Task OnCellClick(Cell cell)
+    {
+        await JS.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
+    }
+
+   
 }

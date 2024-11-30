@@ -1,84 +1,60 @@
 ﻿@inject IJSRuntime JsRuntime
-
 @using ZipTabel.Model
-
-@* <div id="m" style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;" contenteditable="true">
-    @if (IsFormula)
-    {
-        <span style="color: blue;">@Cell.Formula</span>
-    }
-    else
-    {
-        @foreach (var (charValue, index) in Cell.Value?.Select((c, i) => (c, i)) ?? Enumerable.Empty<(char, int)>())
-        {
-            <span style="color: @(Cell.GetCharColor(index)); font-size: @(Cell.GetCharSize(index))px;">
-                @charValue       
-            </span>
-        }
-    }
-</div> *@
-
-<input @oninput="HandleInputChange" style="@Style" @ondblclick="OnCellDoubleClick" class="input-cell" id="userInput" />
-
-<script>
-    var search = document.getElementById('userInput');
-
-    search.oninput = function() {
-        if (this.value.length == 2 && !isNaN(+this.value)) {
-            document.getElementById("m").focus();
-        }
-        console.log(1);
-    };
-</script>
-
-
-@* <script>
-
-    var temp;
-
-    function showAlert()
-    {
-        var e = document.getElementById('userInput');
-        e.target.value = e.target.value.split('1').join('I');
-    }
-
-
-</script> *@
-
+@using ZipTabel.Pages
+<input @oninput="HandleInputChange"
+       @ondblclick="OnCellDoubleClick"
+       @onkeydown="HandleKeyDown"
+       style="@Style"
+       class="input-cell @EditingClass"
+       id="@Cell.Address"
+       value="@UserInput" />
 @code {
     [Parameter] public Cell Cell { get; set; }
-    [Parameter]
-    public string Style { get; set; }
-    private string UserInput ;
-    private bool IsEditing = false;  
+    [Parameter] public string Style { get; set; }
+
+    private string UserInput { get; set; }
+    private bool IsEditing = false;
     private bool IsFormula => !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         UserInput = Cell.Value;
     }
-
-    private async void OnCellDoubleClick()
+   
+    private void HandleKeyDown(KeyboardEventArgs e)
     {
-        IsEditing = true;
+        if (e.CtrlKey)
+        {
+            UserInput = Cell.Address;
+            Cell.Value = Cell.Address;
+            Style = "color: green;";
+            StateHasChanged();
+        }
+    }
 
-        if (String.IsNullOrEmpty(Cell.Value))
+    private void OnCellDoubleClick()
+    {
+        Style = "color: blue;";
+        IsEditing = true;
+        StateHasChanged();
+
+        if (string.IsNullOrEmpty(Cell.Value))
         {
             Cell.Formula = "=";
         }
 
         if (!string.IsNullOrEmpty(Cell.Formula) && Cell.Formula[0] != '=')
         {
-            Cell.Formula = "=" + Cell.Formula; 
+            Cell.Formula = "=" + Cell.Formula;
         }
 
-        UserInput = Cell.Formula;
+        UserInput = Cell.Formula ?? Cell.Value;
     }
 
-
-    private /* async */ void HandleInputChange(ChangeEventArgs e)
+    private void HandleInputChange(ChangeEventArgs e)
     {
-        UserInput = e.Value.ToString();
+        UserInput = e.Value?.ToString() ?? string.Empty;
+        CellManager.SetValue(UserInput);
         if (IsFormula)
         {
             Cell.Formula = UserInput;
@@ -88,11 +64,9 @@
         {
             Cell.Value = UserInput;
         }
-
+        Style = "color: black;";
         IsEditing = false;
-
-        /* wait JS.InvokeAsync<string>("showAlert"); */
+        StateHasChanged();
     }
-
     private string EditingClass => IsEditing ? "editing" : string.Empty;
 }
