@@ -4,10 +4,10 @@
 .input-cell {
     width: 10em;
     height: 3em !important;
-    border: 1px solid gray;
     padding: 0.5em;
     font-size: 1em;
     resize: none;
+    border: 0 !important;
 }
 
 .input-cell:focus {
@@ -24,4 +24,8 @@
     background-color: #a8c1fa;
     height: 6em;
     width: 100%;
+}
+
+td {
+    border: 1px solid gray;
 }

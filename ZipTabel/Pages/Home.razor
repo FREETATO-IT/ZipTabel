@@ -23,13 +23,18 @@
                 {
                     var address = GetCellAddress(row, col);
                     var cell = Sheet.GetCell(address);
-                    <td @onclick="() => OnCellClick(cell)">
+                    <td @onclick="() => OnCellClick(cell)"
+                    @onmousedown="() => OnMouseDown(cell)"
+                    @onmouseup="() => OnMouseUp(cell)"
+                    @onmousemove="() => OnMouseMove(cell)"
+                    style="background-color: @(SelectedCells.Contains(cell) ? "red" : "white")">
                         <ZipTabel.Components.CellView Cell="@cell" />
                     </td>
                 }
             </tr>
         }
     </tbody>
+
 </table>
 
 <script>
@@ -69,6 +74,9 @@
 
 
 @code {
+    private List<Cell> SelectedCells = new(); // Список выделенных ячеек
+    private Cell StartCell; // Начальная ячейка выделения
+    private bool IsSelecting = false; // Флаг выбора
     public Sheet Sheet = new Sheet("Лист1");
     private int TotalRows = 30;
     private int TotalCols = 30;
@@ -151,7 +159,82 @@
 
     private async Task OnCellClick(Cell cell)
     {
-        await JSRuntime.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
+        // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnCellClick{cell.Address}");
+    }
+    private async Task OnMouseDown(Cell cell)
+    {
+        StartCell = cell;
+        IsSelecting = true; 
+        SelectedCells.Clear(); 
+        SelectedCells.Add(cell); 
     }
 
+    private async Task OnMouseMove(Cell cell)
+    {
+
+        if (IsSelecting)
+        {
+            await UpdateSelectedCells(StartCell, cell);
+        }
+    }
+
+    private async Task OnMouseUp(Cell cell)
+    {
+        
+        IsSelecting = false; // Завершаем процесс выделения
+        await UpdateSelectedCells(StartCell, cell); // Обновляем финальный диапазон
+                                              // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnMouseUp: {cell.Address}");
+    }
+
+    // Метод для вычисления диапазона выделения
+    private async Task UpdateSelectedCells(Cell startCell, Cell endCell)
+    {
+        if (startCell.Address == endCell.Address)
+        {
+            SelectedCells.Clear();
+            return;
+        }
+        SelectedCells.Clear();
+
+        var (startRow, startCol) = ParseCellAddress(startCell.Address);
+        var (endRow, endCol) = ParseCellAddress(endCell.Address);
+
+        int minRow = Math.Min(startRow, endRow);
+        int maxRow = Math.Max(startRow, endRow);
+        int minCol = Math.Min(startCol, endCol);
+        int maxCol = Math.Max(startCol, endCol);
+
+        // Добавляем ячейки в выделенный диапазон
+        for (int row = minRow; row <= maxRow; row++)
+        {
+            for (int col = minCol; col <= maxCol; col++)
+            {
+                var address = GetCellAddress(row, col);
+                var cell = Sheet.GetCell(address);
+                SelectedCells.Add(cell);
+            }
+        }
+
+        await InvokeAsync(StateHasChanged); // Обновляем UI
+    }
+
+    private (int row, int col) ParseCellAddress(string address)
+    {
+        int col = 0;
+        int row = 0;
+
+        foreach (char c in address)
+        {
+            if (char.IsLetter(c))
+            {
+                col = col * 26 + (char.ToUpper(c) - 'A' + 1);
+            }
+            else if (char.IsDigit(c))
+            {
+                row = row * 10 + (c - '0');
+            }
+        }
+
+        return (row, col);
+    }
 }
