@@ -1,27 +1,111 @@
 ﻿@page "/"
 @using ZipTabel.Components
-<h1>HELLO</h1>
 <PageTitle>Home</PageTitle>
 
-<ZipTabel.Components.CellView Cell="@Sheet.GetCell("A1")"></ZipTabel.Components.CellView>
-@* <ZipTabel.Components.CellView Cell="@Sheet.GetCell("A2")"></ZipTabel.Components.CellView> *@
+<button @onclick="ExpandRight"> 10 право </button>
+<button @onclick="ExpandDown">Expand 10 вниз</button>
 
+<table border="1">
+    <thead>
+        <tr>
+            <th></th>
+            @for (int col = 1; col <= TotalCols; col++)
+            {
+                <th>@GetColumnLetter(col)</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @for (int row = 1; row <= TotalRows; row++)
+        {
+            <tr>
+                <td>@row</td>
+                @for (int col = 1; col <= TotalCols; col++)
+                {
+                    var address = GetCellAddress(row, col);
+                    var cell = Sheet.GetCell(address);
+                    <td>
+                        <ZipTabel.Components.CellView Cell="@cell" />
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
 
 @code {
     public Sheet Sheet = new Sheet();
+    private int TotalRows = 50;  
+    private int TotalCols = 50;  
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadSheetData();
+        await InitializeSheet();
     }
 
-    private async Task LoadSheetData()
+    private async Task InitializeSheet()
     {
-
-        // Пример заполнения ячеек значениями
-        Sheet.AddCell("A1", new Cell("A1"));
-        // Sheet.AddCell("A2", new Cell("A2"));
+        for (int row = 1; row <= TotalRows; row++)
+        {
+            for (int col = 1; col <= TotalCols; col++)
+            {
+                var address = GetCellAddress(row, col);
+                Sheet.AddCell(address, new Cell(address));
+            }
+        }
     }
 
-}
+    private async Task ExpandRight()
+    {
+        int newTotalCols = TotalCols + 10;
 
+        // Add new columns
+        for (int row = 1; row <= TotalRows; row++)
+        {
+            for (int col = TotalCols + 1; col <= newTotalCols; col++)
+            {
+                var address = GetCellAddress(row, col);
+                Sheet.AddCell(address, new Cell(address));
+            }
+        }
+
+        TotalCols = newTotalCols;
+
+    }
+
+    private async Task ExpandDown()
+    {
+        int newTotalRows = TotalRows + 10;
+
+        for (int row = TotalRows + 1; row <= newTotalRows; row++)
+        {
+            for (int col = 1; col <= TotalCols; col++)
+            {
+                var address = GetCellAddress(row, col);
+                Sheet.AddCell(address, new Cell(address));
+            }
+        }
+
+        TotalRows = newTotalRows;
+
+        StateHasChanged();
+    }
+
+    private string GetCellAddress(int row, int col)
+    {
+        return $"{GetColumnLetter(col)}{row}";
+    }
+
+    private string GetColumnLetter(int col)
+    {
+        int dividend = col;
+        string columnLetter = String.Empty;
+        while (dividend > 0)
+        {
+            int modulo = (dividend - 1) % 26;
+            columnLetter = Convert.ToChar(65 + modulo) + columnLetter;
+            dividend = (dividend - modulo) / 26;
+        }
+        return columnLetter;
+    }
+}
