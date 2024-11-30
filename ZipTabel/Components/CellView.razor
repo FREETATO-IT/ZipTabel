@@ -21,7 +21,6 @@ id="@Cell.Address" />
     protected override void OnInitialized()
     {
         UserInput = Cell.Value;
-        Buffer = UserInput;
     }
 
     private async Task HandleInputChange(ChangeEventArgs e)
@@ -52,8 +51,7 @@ id="@Cell.Address" />
 
     private void OnInputBlur()
     {
-        Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
-        UserInput = Cell.Value;
+        // Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
         StateHasChanged();
     }
     private bool IsFormula => Cell.Formula.StartsWith("=");
