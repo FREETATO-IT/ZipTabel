@@ -67,11 +67,12 @@
     };
 </script>
 
-
 @code {
     public Sheet Sheet = new Sheet();
-    private int TotalRows = 50;
-    private int TotalCols = 50;
+    private int TotalRows = 30;
+    private int TotalCols = 30;
+    private int maxWidth;
+
     protected override async Task OnInitializedAsync()
     {
         await InitializeSheetAsync();
@@ -117,14 +118,14 @@
 
     private async Task InitializeSheetAsync()
     {
-        for (int row = 1; row <= TotalRows; row++)
-        {
-            for (int col = 1; col <= TotalCols; col++)
-            {
-                var address = GetCellAddress(row, col);
-                Sheet.AddCell(address, new Cell(address));
-            }
-        }
+        // for (int row = 1; row <= TotalRows; row++)
+        // {
+        //     for (int col = 1; col <= TotalCols; col++)
+        //     {
+        //         var address = GetCellAddress(row, col);
+        //         Sheet.AddCell(address, new Cell(address));
+        //     }
+        // }
     }
 
     
