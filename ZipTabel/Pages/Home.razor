@@ -266,19 +266,13 @@
 
 
 @code {
-    private List<Cell> SelectedCells = new(); // Список выделенных ячеек
-    private Cell StartCell; // Начальная ячейка выделения
+    private List<Cell> SelectedCells = new(); 
     private bool IsSelecting = false; // Флаг выбора
     public Sheet Sheet = new Sheet("Лист1");
     private int TotalRows = 30;
     private int TotalCols = 30;
 
     public string Start = "", End = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        await InitializeSheetAsync();
-    }
 
     [JSInvokable("YourBlazorMethodForVerticalScroll")]
     public void YourBlazorMethodForVerticalScroll()
@@ -324,16 +318,12 @@
     [JSInvokable("ReceiveElementStartId")]
     public void ReceiveElementStartId(string elementId)
     {
-        //Console.WriteLine($"ot ID: {elementId}");
-
         Start = elementId;
     }
 
     [JSInvokable("ReceiveElementEndId")]
     public void ReceiveElementEndId(string elementId)
     {
-        //Console.WriteLine($"do ID: {elementId}");
-
         End = elementId;
 
         if(End!=Start)
@@ -345,18 +335,6 @@
     public void Dispose()
     {
         JSRuntime.InvokeVoidAsync("removeScrollListeners");
-    }
-
-    private async Task InitializeSheetAsync()
-    {
-        // for (int row = 1; row <= TotalRows; row++)
-        // {
-        //     for (int col = 1; col <= TotalCols; col++)
-        //     {
-        //         var address = GetCellAddress(row, col);
-        //         Sheet.AddCell(address, new Cell(address));
-        //     }
-        // }
     }
 
 
@@ -379,36 +357,7 @@
         return columnLetter;
     }
 
-    private async Task OnCellClick(Cell cell)
-    {
-        // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnCellClick{cell.Address}");
-    }
-    private async Task OnMouseDown(Cell cell)
-    {
-        StartCell = cell;
-        IsSelecting = true; 
-        SelectedCells.Clear(); 
-        SelectedCells.Add(cell); 
-    }
 
-    private async Task OnMouseMove(Cell cell)
-    {
-
-        if (IsSelecting)
-        {
-            await UpdateSelectedCells(StartCell, cell);
-        }
-    }
-
-    private async Task OnMouseUp(Cell cell)
-    {
-        
-        IsSelecting = false; // Завершаем процесс выделения
-        await UpdateSelectedCells(StartCell, cell); // Обновляем финальный диапазон
-                                              // await JSRuntime.InvokeVoidAsync("window.logToConsole", $"OnMouseUp: {cell.Address}");
-    }
-
-    // Метод для вычисления диапазона выделения
     private async Task UpdateSelectedCells(Cell startCell, Cell endCell)
     {
         if (startCell.Address == endCell.Address)
@@ -426,7 +375,6 @@
         int minCol = Math.Min(startCol, endCol);
         int maxCol = Math.Max(startCol, endCol);
 
-        // Добавляем ячейки в выделенный диапазон
         for (int row = minRow; row <= maxRow; row++)
         {
             for (int col = minCol; col <= maxCol; col++)
@@ -437,7 +385,6 @@
             }
         }
 
-        await InvokeAsync(StateHasChanged); // Обновляем UI
     }
 
     private (int row, int col) ParseCellAddress(string address)

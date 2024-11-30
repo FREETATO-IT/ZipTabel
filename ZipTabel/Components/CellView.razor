@@ -1,7 +1,6 @@
 ﻿@using System.Timers
 @inject IJSRuntime JSRuntime
-<input @ref="inputElement"
-       @oninput="HandleInputChange"
+<input @oninput="HandleInputChange"
        @ondblclick="OnCellDoubleClick"
        @onkeydown="HandleKeyDown"
        @bind-value="@UserInput" 
@@ -11,16 +10,9 @@
 
 @code {
     [Parameter] public Cell Cell { get; set; }
-    [Parameter] public EventCallback<Cell> OnValueChanged { get; set; }
     [Parameter] public string Style { get; set; }
-    private async Task LogCellValue()
-    {
-        await JSRuntime.InvokeVoidAsync("window.cellHandler.logCellValue", UserInput);
-    }
-    private ElementReference inputElement;
     private string UserInput { get; set; }
     private bool IsEditing = false;
-    private CancellationTokenSource _debounceCts = new CancellationTokenSource();
 
     protected override void OnInitialized()
     {
@@ -29,56 +21,12 @@
 
     private async Task HandleInputChange(ChangeEventArgs e)
     {
-        // Cancel any previous debounce operation
-        _debounceCts.Cancel();
-        _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
-
-        UserInput = e.Value?.ToString() ?? string.Empty;
-
-        try
-        {
-            await Task.Delay(300, token); // Debounce delay
-
-            if (token.IsCancellationRequested) return;
-
-            // Process input
-            if (IsFormula)
-            {
-                Cell.Formula = UserInput;
-                Cell.Recalculate();
-            }
-            else
-            {
-                Cell.Value = UserInput;
-            }
-
-            // Notify parent component of value change
-            await OnValueChanged.InvokeAsync(Cell);
-
-            Style = "color: black;";
-            IsEditing = false;
-            StateHasChanged();
-        }
-        catch (TaskCanceledException)
-        {
-            // Debounce was canceled, do nothing
-        }
+     
     }
 
     private void HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.CtrlKey)
-        {
-            // Minimize re-renders
-            if (UserInput != Cell.Address)
-            {
-                UserInput = Cell.Address;
-                Cell.Value = Cell.Address;
-                Style = "color: green;";
-                StateHasChanged();
-            }
-        }
+        
     }
 
     private void OnCellDoubleClick()
@@ -87,15 +35,6 @@
         IsEditing = true;
         StateHasChanged();
 
-        if (string.IsNullOrEmpty(Cell.Value))
-        {
-            Cell.Formula = "=";
-        }
-        if (!string.IsNullOrEmpty(Cell.Formula) && Cell.Formula[0] != '=')
-        {
-            Cell.Formula = "=" + Cell.Formula;
-        }
-        UserInput = Cell.Formula ?? Cell.Value;
     }
 
     private bool IsFormula =>
