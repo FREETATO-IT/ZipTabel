@@ -53,8 +53,7 @@ namespace ZipTabel.Model
 
             try
             {
-                var parser = new FormulaParser();
-                Value = parser.Evaluate(Formula, Dependencies);
+                Value = ExcelFormulaEvaluator.ParseFormula(Formula, Dependencies);
                 HasError = false;
             }
             catch

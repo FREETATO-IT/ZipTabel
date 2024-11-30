@@ -44,23 +44,7 @@ namespace ZipTabel.Model
                 _cells.Add(address, cell);
             }
         }
-        public void SetCellFormula(string address, string formula)
-        {
-            var cell = GetCell(address);
-            cell.Formula = formula;
-
-            var parser = new FormulaParser();
-            var dependencies = parser.ParseDependencies(formula);
-
-            foreach (var depAddress in dependencies)
-            {
-                var dependencyCell = GetCell(depAddress);
-                cell.Dependencies.Add(dependencyCell);
-                dependencyCell.Dependents.Add(cell);
-            }
-
-            cell.Recalculate();
-        }
+    
     }
 
 }
