@@ -4,6 +4,8 @@
 <PageTitle>Home</PageTitle>
 <script src="js/script.js"></script>
 
+<MainMenu></MainMenu>
+
 <table border="1">
     <thead>
         <tr>
@@ -23,11 +25,7 @@
                 {
                     var address = GetCellAddress(row, col);
                     var cell = Sheet.GetCell(address);
-                    <td @onclick="() => OnCellClick(cell)"
-                    @onmousedown="() => OnMouseDown(cell)"
-                    @onmouseup="() => OnMouseUp(cell)"
-                    @onmousemove="() => OnMouseMove(cell)"
-                    style="background-color: @(SelectedCells.Contains(cell) ? "red" : "white")">
+                    <td>
                         <ZipTabel.Components.CellView Cell="@cell" />
                     </td>
                 }
@@ -36,6 +34,200 @@
     </tbody>
 
 </table>
+
+@* <script>
+    window.initScrollDrag = function() {
+        let isMouseDown = false; // Чтобы отслеживать состояние мыши
+        let startY; // Начальная позиция мыши
+
+        let temp = 0;
+        let walk;
+
+        // Обработчик mousedown
+        document.addEventListener('mousedown', function(event) {
+            isMouseDown = true; // Активируем режим перетаскивания
+            startY = event.pageY; // Сохраняем начальную позицию Y
+            document.body.style.cursor = 'grabbing'; // Меняем курсор
+        });
+
+        // Обработчик mouseup
+        document.addEventListener('mouseup', function() {
+            isMouseDown = false; // Деактивируем режим перетаскивания
+            temp = 0;
+            document.body.style.cursor = 'grab'; // Возвращаем курсор обратно
+        });
+
+        // Обработчик mousemove
+        document.addEventListener('mousemove', function(event) {
+            if (!isMouseDown) return; // Если не перетаскиваем, выходим
+
+            if(walk >= 0)
+                temp++;
+            else
+                temp--;
+
+            //console.log(temp);
+
+            event.preventDefault(); // Предотвращаем выделение текста при прокрутке
+            const y = event.pageY; // Текущая позиция мыши
+            walk = (y - startY) * 4; // Параметр, контролирующий скорость прокрутки
+
+            startY = y; // Обновляем начальную позицию для следующего движения
+
+                        console.log(walk);
+        });
+
+        setInterval(intervalId, 0);
+
+        function intervalId() {
+            if(temp > 100)
+                window.scrollBy(0, +walk); // Прокручиваем тело документа
+            else if(temp < 0)
+                window.scrollBy(0, +walk); // Прокручиваем тело документа
+
+            console.log(walk);
+        }
+    };
+
+</script> *@
+
+<script>
+    function checkFirstCharacter(inputElement) {
+        const value = inputElement.value; // Получаем текущее значение поля ввода
+        const inputElements = document.querySelectorAll(".input-cell");
+
+        if (value.charAt(0) === "=") {
+            console.log(`Первый символ в элементе с id ${inputElement.id} равен '='`);
+            // Уведомляем Blazor, если первый символ равен "="
+            //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
+            inputElements.forEach(el => {
+                if (el !== inputElement) {
+                    el.readOnly = true; // Отключаем все, кроме текущего
+                }
+            });
+        } else {
+            inputElements.forEach(el => {
+                el.readOnly = false; // Отключаем все, кроме текущего
+            });
+            console.log(`Первый символ в элементе с id ${inputElement.id} не равен '='`);
+        }
+    }
+
+    // Инициализация обработчика события input на всех элементах
+    function initInputChecks() {
+        const inputElements = document.querySelectorAll(".input-cell"); // Замените на ваш класс
+        inputElements.forEach(function(inputElement) {
+            inputElement.addEventListener("input", function() {
+                checkFirstCharacter(inputElement);
+            });
+        });
+    }
+
+    // Функция для наблюдения за изменениями в контейнере
+    function observeInputChanges(container) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === "childList") {
+                    // Если добавлены новые узлы (input элементы)
+                    initInputChecks(); // Переинициализируем обработчики для новых input
+                }
+            });
+        });
+
+        observer.observe(container, {
+            childList: true, // Наблюдаем за добавлением/удалением дочерних элементов
+            subtree: true // Наблюдаем за изменениями также и в дочерних узлах
+        });
+    }
+
+    // Вызов функций инициализации
+    document.addEventListener("DOMContentLoaded", function() {
+        const inputContainer = document.querySelector("#input-container"); // Укажите ваш контейнер с input
+        initInputChecks(); // Инициализируем обработчики для существующих input
+        observeInputChanges(inputContainer); // Начинаем наблюдение за изменениями
+    });
+</script>
+
+<script>
+    window.initInputHandlers = function(dotnetHelper) {
+        var tableBody = document.querySelector('tbody');
+        var isMouseDown = false; // Переменная для отслеживания состояния мыши
+        var startCell = null; // Ячейка, с которой начинается выделение
+        var endCell = null; // Ячейка, с которой заканчивается выделение
+
+        // Обработчик mouseup
+        tableBody.addEventListener('mouseup', function(event) {
+            if (event.target.tagName === 'INPUT') {
+            const elementId = event.target.id;
+            /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
+
+            // Возвращаем значение в Blazor
+            dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
+            }
+            // Завершение выделения
+            isMouseDown = false; // Сбрасываем состояние
+        });
+
+        // Обработчик mousedown
+        tableBody.addEventListener('mousedown', function(event) {
+            if (event.target.tagName === 'INPUT') {
+                const elementId = event.target.id;
+                /* console.log(`ID от: ${elementId}`);  */// Выводим ID элемента в консоль
+
+                // Возвращаем значение в Blazor
+                dotnetHelper.invokeMethodAsync('ReceiveElementStartId', elementId);
+
+                isMouseDown = true; // Нажали кнопку мыши
+                startCell = event.target.closest('td'); // Определяем начальную ячейку
+                startCell.classList.add('selected'); // Выделяем начальную ячейку
+
+                Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+                    cell.classList.remove('selected');
+                });
+
+                startCell.classList.add('selected');
+            }
+        });
+
+        // Выделение области при перемещении мыши
+        tableBody.addEventListener('mousemove', function(event) {
+            if (isMouseDown && event.target.tagName === 'INPUT') {
+                endCell = event.target.closest('td'); // Определяем конечную ячейку
+                highlightCells(startCell, endCell); // Функция для выделения ячеек
+            }
+        });
+
+        // Функция выделения ячеек
+        function highlightCells(startCell, endCell) {
+            // Убираем выделение со всех ячеек
+            Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            // Получаем индексы начальной и конечной ячеек
+            const startRowIdx = startCell.parentElement.rowIndex - 1;
+            const startColIdx = startCell.cellIndex;
+            const endRowIdx = endCell.parentElement.rowIndex - 1;
+            const endColIdx = endCell.cellIndex;
+
+            const rowStart = Math.min(startRowIdx, endRowIdx);
+            const rowEnd = Math.max(startRowIdx, endRowIdx);
+            const colStart = Math.min(startColIdx, endColIdx);
+            const colEnd = Math.max(startColIdx, endColIdx);
+
+            // Выделяем ячейки в области
+            for (let row = rowStart; row <= rowEnd; row++) {
+                for (let col = colStart; col <= colEnd; col++) {
+                    const cell = tableBody.rows[row].cells[col];
+                    if (cell) {
+                        cell.classList.add('selected'); // Добавляем класс выделения
+                    }
+                }
+            }
+        }
+    }
+</script>
+
 
 <script>
     let blazorComponent;
@@ -80,7 +272,8 @@
     public Sheet Sheet = new Sheet("Лист1");
     private int TotalRows = 30;
     private int TotalCols = 30;
-    private int maxWidth;
+
+    public string Start = "", End = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -111,13 +304,42 @@
         StateHasChanged();
     }
 
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Передаем ссылку на экземпляр компонента
+            var dotnetHelper = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("initInputHandlers", dotnetHelper);
+
             await JSRuntime.InvokeVoidAsync("initializeScrollListeners", DotNetObjectReference.Create(this));
+
+            await JSRuntime.InvokeVoidAsync("initInputChecks"); // Инициализируем проверку
+
+            // await JSRuntime.InvokeVoidAsync("initScrollDrag");
         }
+    }
+
+
+    [JSInvokable("ReceiveElementStartId")]
+    public void ReceiveElementStartId(string elementId)
+    {
+        //Console.WriteLine($"ot ID: {elementId}");
+
+        Start = elementId;
+    }
+
+    [JSInvokable("ReceiveElementEndId")]
+    public void ReceiveElementEndId(string elementId)
+    {
+        //Console.WriteLine($"do ID: {elementId}");
+
+        End = elementId;
+
+        if(End!=Start)
+            Console.WriteLine($"{Start}:{End}");
+        else
+            Console.WriteLine($"{Start}");
     }
 
     public void Dispose()
@@ -238,3 +460,21 @@
         return (row, col);
     }
 }
+
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    th, td {
+        border: 1px solid #cccccc;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .highlighted {
+        background-color: lightblue;
+    }
+</style>
