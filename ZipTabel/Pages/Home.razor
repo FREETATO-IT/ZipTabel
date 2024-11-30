@@ -1,11 +1,9 @@
 ﻿@page "/"
 @using ZipTabel.Components
-@inject IJSRuntime JS
+@inject IJSRuntime JSRuntime
 <PageTitle>Home</PageTitle>
 <script src="js/script.js"></script>
 
-<button @onclick="ExpandRight">10 вправо</button>
-<button @onclick="ExpandDown">Expand 10 вниз</button>
 <table border="1">
     <thead>
         <tr>
@@ -34,6 +32,42 @@
     </tbody>
 </table>
 
+<script>
+    let blazorComponent;
+    //проверка y
+    window.scrollToBottomHandler = () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight - 20;
+
+    if (scrollTop + windowHeight >= documentHeight) {
+    blazorComponent.invokeMethodAsync('YourBlazorMethodForVerticalScroll');
+    }
+    };
+    //проверка x
+    window.scrollToRightHandler = () => {
+    const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+    const windowWidth = window.innerWidth;
+    const documentWidth = document.documentElement.scrollWidth - 20;
+
+    if (scrollLeft + windowWidth >= documentWidth) {
+    blazorComponent.invokeMethodAsync('YourBlazorMethodForHorizontalScroll');
+    }
+    };
+    //вызов
+    window.initializeScrollListeners = (dotNetReference) => {
+    blazorComponent = dotNetReference;
+    window.addEventListener('scroll', scrollToBottomHandler);
+    window.addEventListener('scroll', scrollToRightHandler);
+    };
+
+    window.removeScrollListeners = () => {
+    window.removeEventListener('scroll', scrollToBottomHandler);
+    window.removeEventListener('scroll', scrollToRightHandler);
+    };
+</script>
+
+
 @code {
     public Sheet Sheet = new Sheet();
     private int TotalRows = 50;
@@ -41,6 +75,44 @@
     protected override async Task OnInitializedAsync()
     {
         await InitializeSheetAsync();
+    }
+
+    [JSInvokable("YourBlazorMethodForVerticalScroll")]
+    public void YourBlazorMethodForVerticalScroll()
+    {
+        TotalRows++;
+        var address = GetCellAddress(TotalRows, 1);
+        Sheet.AddCell(address, new Cell(address));
+
+        // Console.WriteLine("y");
+
+        StateHasChanged();
+    }
+
+    [JSInvokable("YourBlazorMethodForHorizontalScroll")]
+    public void YourBlazorMethodForHorizontalScroll()
+    {
+        TotalCols++;
+        var address = GetCellAddress(1, TotalCols);
+        Sheet.AddCell(address, new Cell(address));
+
+        // Console.WriteLine("x");
+
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Передаем ссылку на экземпляр компонента
+            await JSRuntime.InvokeVoidAsync("initializeScrollListeners", DotNetObjectReference.Create(this));
+        }
+    }
+
+    public void Dispose()
+    {
+        JSRuntime.InvokeVoidAsync("removeScrollListeners");
     }
 
     private async Task InitializeSheetAsync()
@@ -55,46 +127,7 @@
         }
     }
 
-    private async Task ExpandRight()
-    {
-        int newTotalCols = TotalCols + 10;
-
-        var tasks = new List<Task>(); // Список задач для асинхронной обработки
-
-        for (int row = 1; row <= TotalRows; row++)
-        {
-            for (int col = TotalCols + 1; col <= newTotalCols; col++)
-            {
-                var address = GetCellAddress(row, col);
-                tasks.Add(Task.Run(() => Sheet.AddCell(address, new Cell(address))));
-            }
-        }
-
-        await Task.WhenAll(tasks);
-
-        TotalCols = newTotalCols;
-    }
-
-    private async Task ExpandDown()
-    {
-        int newTotalRows = TotalRows + 10;
-
-        var tasks = new List<Task>();
-
-        for (int row = TotalRows + 1; row <= newTotalRows; row++)
-        {
-            for (int col = 1; col <= TotalCols; col++)
-            {
-                var address = GetCellAddress(row, col);
-                tasks.Add(Task.Run(() => Sheet.AddCell(address, new Cell(address))));
-            }
-        }
-
-        await Task.WhenAll(tasks);
-
-        TotalRows = newTotalRows;
-        StateHasChanged();
-    }
+    
 
     private string GetCellAddress(int row, int col)
     {
@@ -116,7 +149,7 @@
 
     private async Task OnCellClick(Cell cell)
     {
-        await JS.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
+        await JSRuntime.InvokeVoidAsync("window.cellHandler.setFormulaInputValue", cell.Value);
     }
 
    
