@@ -92,12 +92,17 @@
 </script> *@
 
 <script>
+    let previousInput = null;
+
     function checkFirstCharacter(inputElement) {
         const value = inputElement.value; // Получаем текущее значение поля ввода
         const inputElements = document.querySelectorAll(".input-cell");
 
         if (value.charAt(0) === "=") {
             console.log(`Первый символ в элементе с id ${inputElement.id} равен '='`);
+
+            previousInput = inputElement.id;
+
             // Уведомляем Blazor, если первый символ равен "="
             //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
             inputElements.forEach(el => {
@@ -146,9 +151,7 @@
         initInputChecks(); // Инициализируем обработчики для существующих input
         observeInputChanges(inputContainer); // Начинаем наблюдение за изменениями
     });
-</script>
 
-<script>
     window.initInputHandlers = function(dotnetHelper) {
         var tableBody = document.querySelector('tbody');
         var isMouseDown = false; // Переменная для отслеживания состояния мыши
@@ -158,12 +161,17 @@
         // Обработчик mouseup
         tableBody.addEventListener('mouseup', function(event) {
             if (event.target.tagName === 'INPUT') {
-            const elementId = event.target.id;
-            /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
+                const elementId = event.target.id;
+                /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
 
-            // Возвращаем значение в Blazor
-            dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
+                // Возвращаем значение в Blazor
+                dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
             }
+
+            console.log(previousInput);
+            if(previousInput != null)
+                document.getElementById(previousInput).focus();
+
             // Завершение выделения
             isMouseDown = false; // Сбрасываем состояние
         });
@@ -171,6 +179,7 @@
         // Обработчик mousedown
         tableBody.addEventListener('mousedown', function(event) {
             if (event.target.tagName === 'INPUT') {
+
                 const elementId = event.target.id;
                 /* console.log(`ID от: ${elementId}`);  */// Выводим ID элемента в консоль
 
