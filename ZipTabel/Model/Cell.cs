@@ -8,8 +8,8 @@ namespace ZipTabel.Model
 {
     public class Cell : ICell
     {
+        public bool IsFormula { get; set; }=false;
         public string Address { get; private set; }
-
         public string CellBeckground="#FFFFF";
 
         private string _value = string.Empty;
