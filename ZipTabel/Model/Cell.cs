@@ -11,22 +11,20 @@ namespace ZipTabel.Model
         public bool IsFormula { get; set; }=false;
         public string Address { get; private set; }
         public string CellBeckground="#FFFFF";
+        public string CellForeground="#FFFFF";
 
         private string _value = string.Empty;
-        private List<CharSettings> _charSettings = new List<CharSettings>(); // Список настроек для каждого символа
-
+        //private List<CharSettings> _charSettings = new List<CharSettings>();
         public string Value
         {
             get => _value;
             set
             {
                 _value = value;
-                // Обновление настроек для каждого символа
-                _charSettings = new List<CharSettings>(new CharSettings[value.Length].Select(_ => new CharSettings()));
-                NotifyDependents(); // Обновить зависимые ячейки
+                ////_charSettings = new List<CharSettings>(new CharSettings[value.Length].Select(_ => new CharSettings()));
+                NotifyDependents(); 
             }
         }
-
         public string Formula { get; set; } = string.Empty;
         public bool HasError { get; private set; }
         public List<ICell> Dependencies { get; private set; }
@@ -71,41 +69,41 @@ namespace ZipTabel.Model
             }
         }
 
-        public string GetCharColor(int index)
-        {
-            return _charSettings[index].Color;
-        } 
-        public void SetCharColor(int index,string hex)
-        {
-             _charSettings[index].Color = hex;
-        } 
-        public int GetCharSize(int index)
-        {
-            return _charSettings[index].FontSize;
-        } 
-        public void SetCharSize(int index,int size)
-        {
-             _charSettings[index].FontSize = size;
-        }
+        //public string GetCharColor(int index)
+        //{
+        //    return _charSettings[index].Color;
+        //} 
+        //public void SetCharColor(int index,string hex)
+        //{
+        //     _charSettings[index].Color = hex;
+        //} 
+        //public int GetCharSize(int index)
+        //{
+        //    return _charSettings[index].FontSize;
+        //} 
+        //public void SetCharSize(int index,int size)
+        //{
+        //     _charSettings[index].FontSize = size;
+        //}
 
-        public void SetCharSettings(int index, string color, int fontSize, string fontFamily)
-        {
-            if (index >= 0 && index < _charSettings.Count)
-            {
-                var charSetting = _charSettings[index];
-                charSetting.Color = color;
-                charSetting.FontSize = fontSize;
-                charSetting.FontFamily = fontFamily;
-            }
-        }
+        //public void SetCharSettings(int index, string color, int fontSize, string fontFamily)
+        //{
+        //    if (index >= 0 && index < _charSettings.Count)
+        //    {
+        //        var charSetting = _charSettings[index];
+        //        charSetting.Color = color;
+        //        charSetting.FontSize = fontSize;
+        //        charSetting.FontFamily = fontFamily;
+        //    }
+        //}
 
-        public CharSettings GetCharSettings(int index)
-        {
-            if (index >= 0 && index < _charSettings.Count)
-            {
-                return _charSettings[index];
-            }
-            return new CharSettings(); 
-        }
+        //public CharSettings GetCharSettings(int index)
+        //{
+        //    if (index >= 0 && index < _charSettings.Count)
+        //    {
+        //        return _charSettings[index];
+        //    }
+        //    return new CharSettings(); 
+        //}
     }
 }

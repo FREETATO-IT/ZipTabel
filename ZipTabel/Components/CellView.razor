@@ -22,20 +22,25 @@
     }
     private string Buffer { get; set; } = string.Empty;
     private bool IsEditing { get; set; } = false;
-
     protected override void OnInitialized()
     {
         Cell.Value = UserInput;
     }
-
     private async void HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
             await JSRuntime.InvokeVoidAsync("inputChanged");
 
+            // Log when the cell stops being a formula
+            bool wasFormula = Cell.IsFormula;
+
             if (string.IsNullOrWhiteSpace(UserInput))
             {
+                if (wasFormula)
+                {
+                    Console.WriteLine($"Cell {Cell.Address} is no longer a formula. Previous formula: {Cell.Formula}");
+                }
                 Cell.IsFormula = false;
                 Cell.Formula = string.Empty;
                 Cell.Value = string.Empty;
@@ -45,11 +50,14 @@
             {
                 Cell.IsFormula = true;
                 Cell.Formula = UserInput;
-                Console.WriteLine("Запуск OnCalculate");
                 OnCalculate();
             }
             else
             {
+                if (wasFormula)
+                {
+                    Console.WriteLine($"Cell {Cell.Address} is no longer a formula. Previous formula: {Cell.Formula}");
+                }
                 Cell.IsFormula = false;
                 Cell.Formula = string.Empty;
                 Cell.Value = UserInput;
@@ -66,20 +74,17 @@
             StateHasChanged();
         }
     }
-
     private void OnCalculate()
     {
         try
         {
             Cell.Dependents.Clear();
-
             string pattern = @"([A-Z]+[0-9]+)";
             MatchCollection matches = Regex.Matches(UserInput, pattern);
             foreach (Match match in matches)
             {
                 Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
             }
-
             Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
             UserInput = Cell.Value;
         }
@@ -89,11 +94,16 @@
         }
         StateHasChanged();
     }
-
     private void OnInputBlur()
     {
+        bool wasFormula = Cell.IsFormula;
+
         if (string.IsNullOrWhiteSpace(UserInput))
         {
+            if (wasFormula)
+            {
+                Console.WriteLine($"Cell {Cell.Address} is no longer a formula. Previous formula: {Cell.Formula}");
+            }
             Cell.IsFormula = false;
             Cell.Formula = string.Empty;
             Cell.Value = string.Empty;
@@ -106,10 +116,8 @@
         {
             UserInput = Cell.Value;
         }
-
         StateHasChanged();
     }
-
     private void OnInputFocus(FocusEventArgs e)
     {
         if (Cell.IsFormula)
@@ -120,12 +128,10 @@
         {
             UserInput = Cell.Value;
         }
-
         Buffer = UserInput;
         IsEditing = true;
         StateHasChanged();
     }
-
     private bool IsFormula => Cell.Formula.StartsWith("=");
     private string EditingClass => IsEditing ? "editing" : string.Empty;
 }
