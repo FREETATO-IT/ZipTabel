@@ -11,14 +11,12 @@
 	
 	}
 .picker{
-/*	position:absolute;*/
-	margin:0 auto;
-	top:30%;
-	left:40%;	
+	position:relative;
+	margin:1em;
+	top:30%;	
 	-moz-user-select: none;
 	  -webkit-user-select: none; 
 	  width:100%;
-	  padding: 1em;
 }
 #block_picker{
 	background-color:red;
