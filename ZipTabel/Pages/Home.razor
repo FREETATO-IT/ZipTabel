@@ -289,7 +289,7 @@
         set
         {
             start = value;
-            
+
         }
     }
 
@@ -299,7 +299,7 @@
         set
         {
             end = value;
-            
+
         }
     }
 
@@ -438,7 +438,28 @@
 
         if(Start[0]==End[0]){
 
+            var rangeEllements = UpdateSelectedCells(Sheet.GetCell(Start), Sheet.GetCell(End));
+
+            foreach (var item in rangeEllements)
+            {
+                
+            }
+
         }
+    }
+    private bool IsAscending(IEnumerable<Cell> rangeElements)
+    {
+        var values = rangeElements.Select(cell => Convert.ToInt32(cell.Value)).ToList();
+
+        for (int i = 1; i < values.Count; i++)
+        {
+            if (values[i] <= values[i - 1])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
