@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ZipTabel.Services;
@@ -30,14 +31,21 @@ namespace ZipTabel.Model
             return _cells[address];
         }
 
-        
-        public string Setalize()
+
+        public string OnSaveSheet()
         {
             var NoEmpetyCell = _cells.Where(c => !string.IsNullOrEmpty(c.Value.Value));
-            return JsonSerializer.Serialize(new SheetExpoer(Name,NoEmpetyCell));
 
+            var options = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve,
+                WriteIndented = true 
+            };
+
+            return JsonSerializer.Serialize(new SheetExpoer(Name, NoEmpetyCell), options);
         }
-       public  void AddCell(string address, Cell cell)
+        public  void AddCell(string address, Cell cell)
         {
             if (!_cells.ContainsKey(address))
             {

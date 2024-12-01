@@ -3,7 +3,16 @@
 @inject IJSRuntime JSRuntime
 <PageTitle>Home</PageTitle>
 <script src="js/script.js"></script>
+<button @onclick="ExportFile">Экспортировать файл</button>
 
+@code {
+    private async Task ExportFile()
+    {
+        var fileContent = "Имя,Фамилия,Возраст\nИван,Иванов,30\nМария,Петрова,25";
+
+        await JSRuntime.InvokeVoidAsync("downloadFile", "data.json", Sheet.OnSaveSheet());
+    }
+}
 <MainMenu></MainMenu>
 
 <table border="1">
@@ -34,6 +43,19 @@
     </tbody>
 
 </table>
+<script>
+    function downloadFile(fileName, content) {
+        const blob = new Blob([content], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+</script>
 
 @* <script>
     window.initScrollDrag = function() {
