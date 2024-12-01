@@ -27,6 +27,7 @@ id="@Cell.Address" />
 
     private async Task HandleInputChange(ChangeEventArgs e)
     {
+
     }
 
     private async void HandleKeyDown(KeyboardEventArgs e)
@@ -60,6 +61,7 @@ id="@Cell.Address" />
         if (string.IsNullOrEmpty(Cell.Formula)){
             Cell.Formula = "=";
         }
+
         Style = "color: blue;";
         IsEditing = true;
         Buffer = UserInput;
