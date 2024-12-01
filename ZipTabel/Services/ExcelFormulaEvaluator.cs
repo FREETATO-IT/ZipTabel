@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using ZipTabel.Interfaces;
 using System.Collections.Generic;
 using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using System.Net;
 
 
 public enum MatchType
@@ -222,7 +223,7 @@ public static class ExcelFormulaEvaluator
     {
         try
         {
-            var Oper = ValidateString(AddressToValue(arguments[0], dependencies));
+            var Oper = ValidateString(arguments[0], dependencies);
             var Range = GetCellsInRange(arguments[1], dependencies);
             var Col = arguments[2];
             var Type = arguments[3];
@@ -284,7 +285,7 @@ public static class ExcelFormulaEvaluator
     {
         // Аргументы
         string range = arguments[0];       // Диапазон для условия
-        string condition = ValidateString(arguments[1]);  // Условие
+        string condition = ValidateString(arguments[1], dependencies);  // Условие
 
         // Парсим диапазоны
         var rangeCells = GetCellsInRange(range, dependencies);
@@ -337,7 +338,7 @@ public static class ExcelFormulaEvaluator
     {
         // Аргументы
         string range = arguments[0];       // Диапазон для условия
-        string condition = ValidateString(arguments[1]);  // Условие
+        string condition = ValidateString(arguments[1], dependencies);  // Условие
 
         // Парсим диапазоны
         var rangeCells = GetCellsInRange(range, dependencies);
@@ -393,10 +394,18 @@ public static class ExcelFormulaEvaluator
 
         if (EvaluateCondition(operand1, conditionOperator, operand2))
         {
+            if (!arguments[1].Contains('"'))
+            {
+                arguments[1] = AddressToValue(arguments[1], dependencies);
+            }
             return arguments[1];
         }
         else
         {
+            if (!arguments[2].Contains('"'))
+            {
+                arguments[2] = AddressToValue(arguments[2], dependencies);
+            }
             return arguments[2];
         }
     }
@@ -497,13 +506,13 @@ public static class ExcelFormulaEvaluator
         string searchText;
         if (Regex.IsMatch(arguments[0], @"([A-Z]+[0-9]+)") && arguments[0].Contains('\"'))
         {
-            searchText = ValidateString(AddressToValue(arguments[0], dependencies));
+            searchText = ValidateString(arguments[0], dependencies);
         }
         else
         {
-            searchText = ValidateString(arguments[0]);
+            searchText = ValidateString(arguments[0], dependencies);
         }
-        string withinText = ValidateString(AddressToValue(arguments[1], dependencies));
+        string withinText = ValidateString(arguments[1], dependencies);
         int startPosition = 1;
 
         // Обработка необязательного аргумента начальной позиции
@@ -709,9 +718,9 @@ public static class ExcelFormulaEvaluator
             return Regex.IsMatch(text, regexPattern);
         }
 
-        cellValue = ValidateString(cellValue);
-        @operator = ValidateString(@operator);
-        value = ValidateString(value);
+        cellValue = cellValue?.Trim() ?? string.Empty;
+        @operator = @operator?.Trim() ?? string.Empty;
+        value = value?.Trim() ?? string.Empty;
 
         // Шаблонное сравнение
         if (@operator == "LIKE")
@@ -759,15 +768,19 @@ public static class ExcelFormulaEvaluator
         };
     }
     // Валидация
-    private static string ValidateString(string input)
+    private static string ValidateString(string input, List<ICell> dependencies)
     {
         input = input?.Trim() ?? string.Empty;
 
-        int start = input.IndexOf('\"');
-        int end = input.LastIndexOf('\"');
-        if (start != end)
+        int start = input.IndexOf('"');
+        int end = input.LastIndexOf('"');
+        if(start >= 0 || end >= 0)
         {
             input = input.Substring(start + 1, end - start - 1);
+        }
+        else
+        {
+            input = AddressToValue(input, dependencies);
         }
         return input;
     }
