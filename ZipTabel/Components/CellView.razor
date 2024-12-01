@@ -33,8 +33,16 @@ id="@Cell.Address" />
     {
         if (e.Key == "Enter")
         {
+            JSRuntime.InvokeVoidAsync("console.log", "________________");
+            string pattern = @"([A-Z]+[0-9]+)";
+            MatchCollection matches = Regex.Matches(UserInput, pattern);
+            foreach (Match match in matches)
+            {
+                Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
+            }
             Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
             UserInput = Cell.Value;
+
             StateHasChanged();
         }
         else if (e.Key == "Escape")
@@ -57,18 +65,7 @@ id="@Cell.Address" />
 
     private void OnInputBlur()
     {
-        JSRuntime.InvokeVoidAsync("console.log", "________________");
-        string pattern = @"([A-Z]+[0-9]+)";
-        MatchCollection matches = Regex.Matches(UserInput, pattern);
-        foreach (Match match in matches)
-        {
-            JSRuntime.InvokeVoidAsync("console.log", "@ "+match.Value);
-            Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
-            JSRuntime.InvokeVoidAsync("console.log", "@ " + (Home.Sheet.GetCell(match.Value).Value));
-        }
-        Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
-        UserInput = Cell.Value;
-
+       
         StateHasChanged();
     }
     private bool IsFormula => Cell.Formula.StartsWith("=");
