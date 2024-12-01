@@ -107,7 +107,7 @@
             //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
             inputElements.forEach(el => {
                 if (el !== inputElement) {
-                    el.readOnly = true; // Отключаем все, кроме текущего
+                    /* el.readOnly = true */; // Отключаем все, кроме текущего
                 }
             });
         } else {
@@ -169,8 +169,8 @@
             }
 
             console.log(previousInput);
-            if(previousInput != null)
-                document.getElementById(previousInput).focus();
+            // if(previousInput != null)
+            //     document.getElementById(previousInput).focus();
 
             // Завершение выделения
             isMouseDown = false; // Сбрасываем состояние

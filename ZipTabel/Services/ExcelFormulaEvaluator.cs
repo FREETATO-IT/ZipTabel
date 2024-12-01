@@ -2,6 +2,7 @@
 using System.Data;
 using System.Text.RegularExpressions;
 using ZipTabel.Interfaces;
+using System.Collections.Generic;
 
 
 public enum MatchType
@@ -42,6 +43,11 @@ public static class ExcelFormulaEvaluator
     /// <exception cref="NotSupportedException">Выбрасывается, если формула не поддерживается или содержит недопустимые операции.</exception>
     public static string ParseFormula(string formula, List<ICell> dependencies)
     {
+        if (formula.All(c => c == '='))
+        {
+            return string.Empty; 
+        }
+
         var mainformula = formula;
 
         try

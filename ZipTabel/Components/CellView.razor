@@ -31,6 +31,8 @@ id="@Cell.Address" />
     {
         if (e.Key == "Enter")
         {
+            Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
+            UserInput = Cell.Value;
             StateHasChanged();
         }
         else if (e.Key == "Escape")
@@ -41,7 +43,9 @@ id="@Cell.Address" />
 
     private void OnCellDoubleClick()
     {
-        Cell.Formula = string.IsNullOrEmpty(Cell.Formula) ? "=" : Cell.Formula;
+        if (string.IsNullOrEmpty(Cell.Formula)){
+            Cell.Formula = "=";
+        }
         Style = "color: blue;";
         IsEditing = true;
         Buffer = UserInput;
@@ -51,7 +55,8 @@ id="@Cell.Address" />
 
     private void OnInputBlur()
     {
-        // Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
+        Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
+        UserInput = Cell.Value;
         StateHasChanged();
     }
     private bool IsFormula => Cell.Formula.StartsWith("=");
