@@ -21,6 +21,7 @@ public static class ExcelFormulaEvaluator
 {
     private static readonly Dictionary<string, Func<string[], List<ICell>, string>> formulaHandlers = new()
     {
+        { "СУММЕСЛИ", (arguments, dependencies) => EvaluateSumIf(arguments, dependencies) },
         { "СУММ", (arguments, dependencies) => EvaluateSum(arguments, dependencies) },
         { "ЕСЛИ", (arguments, dependencies) => EvaluateIf(arguments, dependencies)},
         { "ПРОСМОТР", (arguments, dependencies) => EvaluateWatch(arguments, dependencies) },
@@ -29,11 +30,9 @@ public static class ExcelFormulaEvaluator
         { "ДАТА", (arguments, dependencies) => EvaluateDate(arguments, dependencies) },
         { "ДНИ", (arguments, dependencies) => EvaluateDay(arguments, dependencies) },
         { "НАЙТИ", (arguments, dependencies) => EvaluateFound(arguments, dependencies) },
-
         { "МИН", (arguments, dependencies) => EvaluateMin(arguments, dependencies) },
         { "МАКС", (arguments, dependencies) => EvaluateMax(arguments, dependencies) },
         { "ВПР", (arguments, dependencies) => EvaluateVPR(arguments, dependencies) },
-        { "СУММЕСЛИ", (arguments, dependencies) => EvaluateSumIf(arguments, dependencies) },
         { "СЧЁТЕСЛИ", (arguments, dependencies) => EvaluateScoreIf(arguments, dependencies) },
         { "", (arguments, dependencies) => Evaluate(arguments, dependencies) }
     };
@@ -54,23 +53,38 @@ public static class ExcelFormulaEvaluator
     /// <exception cref="NotSupportedException">Выбрасывается, если формула не поддерживается или содержит недопустимые операции.</exception>
     public static string ParseFormula(string formula, List<ICell> dependencies)
     {
+        //if (!Regex.IsMatch(formula, @"^=(?!.*(?<![<>!=])=).*"))
+        //{
+        //    throw new NotSupportedException($"Формула содержит некорректное использование знака равно: {formula}.");
+        //}
         var mainformula = formula;
-
+        bool IS = true;
         try
         {
             do
             {
+                if (IS)
+                    formula = mainformula;
+
+                IS = true;
                 var arguments = ExtractArguments(formula);
 
                 for (int i = 0; i < arguments.Length; i++)
                 {
-                    if (Regex.IsMatch(arguments[i], @"[+\-*/^]"))
+                    if (Regex.IsMatch(arguments[i], @"[+\-*/^%]"))
                     {
                         var result = Evaluate(new string[] { arguments[i] }, dependencies);
-                        mainformula = mainformula.Replace(arguments[i], result).Replace("=","");
+                        mainformula = mainformula.Replace(arguments[i], result);
                         formula = mainformula;
                     }
+
+                    if (mainformula == "=" + arguments[i])
+                    {
+                        return AddressToValue(arguments[i], dependencies);
+                    }
                 }
+
+                arguments = ExtractArguments(formula);
 
                 for (int i = 0; i < arguments.Length; i++)
                 {
@@ -85,7 +99,6 @@ public static class ExcelFormulaEvaluator
                             {
                                 var result = entry.Value(arguments, dependencies);
                                 mainformula = mainformula.Replace(formula, result);
-                                formula = mainformula;
                                 break;
                             }
                         }
@@ -94,13 +107,20 @@ public static class ExcelFormulaEvaluator
                     else if (count > 0 && countformula > 2)
                     {
                         formula = arguments[i];
+                        IS = false;
                         break;
                     }
                 }
             }
-            while (mainformula.Contains('='));
+            while (mainformula != formula);
 
-            return mainformula;
+            if (Regex.IsMatch(mainformula, @"[+\-*/^]"))
+            {
+                var result = Evaluate(new string[] { mainformula }, dependencies);
+                mainformula = mainformula.Replace(formula, result);
+            }
+
+            return mainformula.Replace("=", "");
         }
         catch
         {
@@ -113,6 +133,10 @@ public static class ExcelFormulaEvaluator
 
         int start = formula.IndexOf('(');
         int end = formula.LastIndexOf(')');
+        if (start == end)
+        {
+            return [formula.Replace("=", string.Empty)];
+        }
         string arg = formula.Substring(start + 1, end - start - 1);
         var arguments = arg.Split(';').Select(arg => arg.Trim()).ToArray();
 
@@ -145,11 +169,13 @@ public static class ExcelFormulaEvaluator
                 if (exponent <= 0)
                     return "1";
 
-                return string.Join("*", new string[exponent].Select(_ => baseNumber.ToString()));
+                return Math.Pow(baseNumber, exponent).ToString();
             });
         }
 
         var formula = AddressToValue(arguments[0], dependencies);
+
+        formula = formula.Replace("%", "/100");
 
         string transformedFormula = TransformPowers(formula);
 
@@ -200,9 +226,9 @@ public static class ExcelFormulaEvaluator
     {
         try
         {
-            var Oper = AddressToValue(arguments[0], dependencies);
-            var Col = AddressToValue(arguments[0], dependencies);
-            var Range = GetCellsInRange(arguments[2], dependencies);
+            var Oper = ValidateString(AddressToValue(arguments[0], dependencies));
+            var Range = GetCellsInRange(arguments[1], dependencies);
+            var Col = arguments[2];
             var Type = arguments[3];
 
 
@@ -235,17 +261,16 @@ public static class ExcelFormulaEvaluator
                     string rowPart = new string(Range[i].Address.SkipWhile(char.IsLetter).ToArray());
                     if (int.TryParse(rowPart, out int row))
                     {
-                        NeedRow = row.ToString();
+                        NeedRow = (row).ToString();
                     }
                     break;
                 }
             }
 
-            // Получаем список строк
             var Rows = new HashSet<int>();
             foreach (var cell in Range)
             {
-                if (cell.Address == Сolumns[int.Parse(Col)] + NeedRow)
+                if (cell.Address == Сolumns[int.Parse(Col) - 1] + NeedRow)
                 {
                     return cell.Value;
                 }
@@ -263,7 +288,7 @@ public static class ExcelFormulaEvaluator
     {
         // Аргументы
         string range = arguments[0];       // Диапазон для условия
-        string condition = arguments[1];  // Условие
+        string condition = ValidateString(arguments[1]);  // Условие
 
         // Парсим диапазоны
         var rangeCells = GetCellsInRange(range, dependencies);
@@ -316,7 +341,7 @@ public static class ExcelFormulaEvaluator
     {
         // Аргументы
         string range = arguments[0];       // Диапазон для условия
-        string condition = arguments[1];  // Условие
+        string condition = ValidateString(arguments[1]);  // Условие
 
         // Парсим диапазоны
         var rangeCells = GetCellsInRange(range, dependencies);
@@ -326,14 +351,13 @@ public static class ExcelFormulaEvaluator
 
         ParseCondition(condition, out conditionOperator, out conditionValue);
 
-        double sum = 0;
+        int sum = 0;
 
         for (int i = 0; i < rangeCells.Count; i++)
         {
             string rangeValue = rangeCells[i].Value;
 
-            // Преобразуем значения в числа (если это возможно)
-            if (double.TryParse(rangeValue, out double rangeNum) && EvaluateCondition(rangeNum.ToString(), conditionOperator, conditionValue))
+            if (EvaluateCondition(rangeValue, conditionOperator, conditionValue))
             {
                 sum += 1;
             }
@@ -383,9 +407,16 @@ public static class ExcelFormulaEvaluator
 
     private static string EvaluateWatch(string[] arguments, List<ICell> dependencies)
     {
-        var MatchValue = Enum.TryParse(arguments[2], out MatchType matchType);
+        var MatchValue = GetCellsInRange(arguments[2], dependencies);
         var conditionrange = GetCellsInRange(arguments[1], dependencies);
-        return FindPosition(arguments[0], conditionrange, matchType).ToString();
+        for (int i = 0; i < conditionrange.Count; i++)
+        {
+            if (conditionrange[i].Value == arguments[0])
+            {
+                return MatchValue[i].Value;
+            }
+        }
+        return "#Н/Д";
     }
 
     private static string EvaluateSearchpoz(string[] arguments, List<ICell> dependencies)
@@ -429,8 +460,15 @@ public static class ExcelFormulaEvaluator
         if (arguments.Length == MaxArguments)
         {
             // Формируем строку вида "день.месяц.год"
-            string dateString = $"{arguments[0]}.{arguments[1]}.{arguments[2]}";
-            return AddressToValue(dateString, dependencies);
+            if(arguments[0].Length <= 2 && arguments[1].Length <= 2 && arguments[0].Length >= 1 && arguments[1].Length >= 1)
+            {
+                string dateString = $"{arguments[0]}.{arguments[1]}.{arguments[2]}";
+                return AddressToValue(dateString, dependencies);
+            }
+            else
+            {
+                throw new NotSupportedException($"Invalid date format");
+            }
         }
         else
         {
@@ -440,12 +478,8 @@ public static class ExcelFormulaEvaluator
 
     private static string EvaluateDay(string[] arguments, List<ICell> dependencies)
     {
-        string date1 = "", date2 = "";
-        foreach (var dep in dependencies)
-        {
-            date1 = arguments[0].Replace(dep.Address, dep.Value);
-            date2 = arguments[1].Replace(dep.Address, dep.Value);
-        }
+        var date1 = AddressToValue(arguments[0], dependencies);
+        var date2 = AddressToValue(arguments[1], dependencies);
 
         if (arguments.Length == 2)
         {
@@ -464,8 +498,8 @@ public static class ExcelFormulaEvaluator
 
     private static string EvaluateFound(string[] arguments, List<ICell> dependencies)
     {
-        string searchText = AddressToValue(arguments[0], dependencies);
-        string withinText = AddressToValue(arguments[1], dependencies);
+        string searchText = ValidateString(AddressToValue(arguments[0], dependencies));
+        string withinText = ValidateString(AddressToValue(arguments[1], dependencies));
         int startPosition = 1;
 
         // Обработка необязательного аргумента начальной позиции
@@ -489,60 +523,6 @@ public static class ExcelFormulaEvaluator
     }
 
 
-      
-    
-
-    private static int FindPosition(string lookupValue, List<ICell> range, MatchType matchType)
-    {
-        var filtered = FilterRange(range, lookupValue, matchType);
-
-        if (filtered.Count == 0)
-        {
-            throw new ArgumentException($"Не найдено соответствующего значения в {GetMatchTypeName(matchType)} диапозоне.");
-        }
-
-        return range.IndexOf(filtered.Last());
-    }
-
-    private static List<ICell> FilterRange(List<ICell> range, string lookupValue, MatchType matchType)
-    {
-        switch (matchType)
-        {
-            case MatchType.LargestLessThanOrEqual:
-                return range.Where(item => Compare(item, lookupValue) <= 0).ToList();
-            case MatchType.ExactMatch:
-                return range.Where(item => item.Value == lookupValue).ToList();
-            case MatchType.SmallestGreaterThanOrEqual:
-                return range.Where(item => Compare(item, lookupValue) >= 0).ToList();
-            default:
-                throw new ArgumentException("Недопустимый тип совпадения. Должно быть По Величине Меньше Или Равно, по Точному Совпадению или По Наименьшему Значению Больше Или Равно.");
-        }
-    }
-    
-    private static string GetMatchTypeName(MatchType matchType)
-    {
-        return matchType switch
-        {
-            MatchType.LargestLessThanOrEqual => "ascending",
-            MatchType.ExactMatch => "exact",
-            MatchType.SmallestGreaterThanOrEqual => "descending",
-            _ => "unknown"
-        };
-    }
-
-    private static int Compare(object a, object b)
-    {
-        if (a is double numA && b is double numB)
-            return numA.CompareTo(numB);
-
-        if (a is string strA && b is string strB)
-            return string.Compare(strA, strB, StringComparison.Ordinal);
-
-        if (a is bool boolA && b is bool boolB)
-            return boolA.CompareTo(boolB);
-
-        throw new ArgumentException("Unsupported data types for comparison.");
-    }
 
     // Адрес в значение
     private static string AddressToValue(string address, List<ICell> dependencies)
@@ -554,7 +534,6 @@ public static class ExcelFormulaEvaluator
 
         return address;
     }
-
     // N аргументов в список адресов
     private static List<string> ArgumentsToAddress(string[] arguments, List<ICell> dependencies)
     {
@@ -579,7 +558,6 @@ public static class ExcelFormulaEvaluator
 
         return conditionrange;
     }
-
     // Парсинг диапазона
     private static List<ICell> GetCellsInRange(string range, List<ICell> dependencies)
     {
@@ -630,7 +608,6 @@ public static class ExcelFormulaEvaluator
                row >= startRow &&
                row <= endRow;
     }
-
     // Парсинг условия oper+right
     private static void ParseCondition(string condition, out string conditionOperator, out string conditionValue)
     {
@@ -728,12 +705,6 @@ public static class ExcelFormulaEvaluator
             return Regex.IsMatch(text, regexPattern);
         }
 
-        // Удаление лишних пробелов
-        string ValidateString(string input)
-        {
-            return input?.Trim() ?? string.Empty;
-        }
-
         cellValue = ValidateString(cellValue);
         @operator = ValidateString(@operator);
         value = ValidateString(value);
@@ -782,5 +753,18 @@ public static class ExcelFormulaEvaluator
             "!=" => cellValue != value,
             _ => throw new NotSupportedException($"Operator {@operator} is not supported for non-numeric values."),
         };
+    }
+    // Валидация
+    private static string ValidateString(string input)
+    {
+        input = input?.Trim() ?? string.Empty;
+
+        int start = input.IndexOf('\"');
+        int end = input.LastIndexOf('\"');
+        if (start != end)
+        {
+            input = input.Substring(start + 1, end - start - 1);
+        }
+        return input;
     }
 }
