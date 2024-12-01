@@ -4,11 +4,11 @@
 @using ZipTabel.Pages
 @inject IJSRuntime JSRuntime
 <input @onkeyup="HandleKeyDown"
-       @onblur="OnInputBlur"
-       @onfocus="OnInputFocus"
-       @bind-value="@UserInput"
-       class="input-cell @EditingClass"
-       id="@Cell.Address" />
+@onblur="OnInputBlur"
+@onfocus="OnInputFocus"
+@bind-value="@UserInput"
+class="input-cell @EditingClass"
+id="@Cell.Address" />
 @code {
     [Parameter] public Cell Cell { get; set; }
     private string userInput = string.Empty;
@@ -74,16 +74,18 @@
             StateHasChanged();
         }
     }
-    private void OnCalculate()
+    public void OnCalculate()
     {
         try
         {
-            Cell.Dependents.Clear();
-            string pattern = @"([A-Z]+[0-9]+)";
-            MatchCollection matches = Regex.Matches(UserInput, pattern);
-            foreach (Match match in matches)
+            Cell.Value = "";
+            Cell.Dependents = new List<ICell>();
+            var res =RangeParser.ParseAddressFormula(UserInput).ToList();
+            foreach (var item in res)
             {
-                Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
+                var _cell = Home.Sheet.GetCell(item);
+                Cell.Dependents.Add(_cell);
+                _cell.Dependencies.Add(Cell);
             }
             Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
             UserInput = Cell.Value;
@@ -91,6 +93,7 @@
         catch (Exception ex)
         {
             Cell.Value = ex.Message;
+            Console.WriteLine(ex.Message);
         }
         StateHasChanged();
     }

@@ -27,8 +27,8 @@ namespace ZipTabel.Model
         }
         public string Formula { get; set; } = string.Empty;
         public bool HasError { get; private set; }
-        public List<ICell> Dependencies { get; private set; }
-        public List<ICell> Dependents { get; private set; }
+        public List<ICell> Dependencies { get; set; }
+        public List<ICell> Dependents { get;  set; }
         public bool IsLocked { get; set; }
 
         public Cell(string address)
