@@ -93,6 +93,7 @@
 
 <script>
     let previousInput = null;
+    let inputFormula = null;
 
     function checkFirstCharacter(inputElement) {
     const value = inputElement.value; // Получаем текущее значение поля ввода
@@ -103,19 +104,25 @@
 
     previousInput = inputElement.id;
 
+    inputFormula = inputElement.value;
+
+    console.log(inputFormula);
+
     // Уведомляем Blazor, если первый символ равен "="
     //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
     inputElements.forEach(el => {
-    if (el !== inputElement) {
-    /* el.readOnly = true */; // Отключаем все, кроме текущего
-    }
-    });
-    } else {
-    inputElements.forEach(el => {
-    el.readOnly = false; // Отключаем все, кроме текущего
-    });
-    console.log(`Первый символ в элементе с id ${inputElement.id} не равен '='`);
-    }
+        if (el !== inputElement) {
+            el.readOnly = true; // Отключаем все, кроме текущего
+        }
+        });
+        } else {
+            inputElements.forEach(el => {
+            el.readOnly = false; // Отключаем все, кроме текущего
+            });
+
+        previousInput = null;
+        console.log(`Первый символ в элементе с id ${inputElement.id} не равен '='`);
+        }
     }
 
     // Инициализация обработчика события input на всех элементах
@@ -158,44 +165,65 @@
     var startCell = null; // Ячейка, с которой начинается выделение
     var endCell = null; // Ячейка, с которой заканчивается выделение
 
+    let tempValId = null;
+
     // Обработчик mouseup
     tableBody.addEventListener('mouseup', function(event) {
     if (event.target.tagName === 'INPUT') {
-    const elementId = event.target.id;
-    /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
+            const elementId = event.target.id;
+            /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
 
-    // Возвращаем значение в Blazor
-    dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
-    }
+            // Возвращаем значение в Blazor
+            dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
 
-    console.log(previousInput);
-    // if(previousInput != null)
-    //     document.getElementById(previousInput).focus();
+            if(previousInput != null && previousInput != elementId)
+            {
+                if(tempValId != elementId)
+                {
+                    document.getElementById(previousInput).value += ":" + elementId;
+                }
+            }
+        }
 
-    // Завершение выделения
-    isMouseDown = false; // Сбрасываем состояние
+        console.log(previousInput);
+        if(previousInput != null)
+            document.getElementById(previousInput).focus();
+
+        // Завершение выделения
+        isMouseDown = false; // Сбрасываем состояние
     });
 
     // Обработчик mousedown
     tableBody.addEventListener('mousedown', function(event) {
-    if (event.target.tagName === 'INPUT') {
+        if (event.target.tagName === 'INPUT') {
 
-    const elementId = event.target.id;
-    /* console.log(`ID от: ${elementId}`);  */// Выводим ID элемента в консоль
+            // if(document.getElementById(previousInput).value.charAt(0) != "=")
+            //     console.log("ioio");
 
-    // Возвращаем значение в Blazor
-    dotnetHelper.invokeMethodAsync('ReceiveElementStartId', elementId);
+            const elementId = event.target.id;
+            /* console.log(`ID от: ${elementId}`);  */// Выводим ID элемента в консоль
 
-    isMouseDown = true; // Нажали кнопку мыши
-    startCell = event.target.closest('td'); // Определяем начальную ячейку
-    startCell.classList.add('selected'); // Выделяем начальную ячейку
+            // Возвращаем значение в Blazor
+            dotnetHelper.invokeMethodAsync('ReceiveElementStartId', elementId);
 
-    Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
-    cell.classList.remove('selected');
-    });
+            if(previousInput != null && previousInput != elementId)
+            {
+                document.getElementById(previousInput).value = inputFormula;
+                document.getElementById(previousInput).value += elementId;
+                tempValId = elementId;
+            }
 
-    startCell.classList.add('selected');
-    }
+            isMouseDown = true; // Нажали кнопку мыши
+            startCell = event.target.closest('td'); // Определяем начальную ячейку
+            startCell.classList.add('selected'); // Выделяем начальную ячейку
+
+            Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+                cell.classList.remove('selected');
+            });
+
+            startCell.classList.add('selected');
+
+        }
     });
 
     // Выделение области при перемещении мыши
