@@ -4,7 +4,7 @@
 @inject IJSRuntime JSRuntime
 <input @oninput="HandleInputChange"
 @ondblclick="OnCellDoubleClick"
-@onkeydown="HandleKeyDown"
+@onkeyup="HandleKeyDown"
 @onblur="OnInputBlur"
 @bind-value="@UserInput"
 style="@Style"
@@ -29,12 +29,24 @@ id="@Cell.Address" />
     {
     }
 
-    private void HandleKeyDown(KeyboardEventArgs e)
+    private async void HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
+            JSRuntime.InvokeVoidAsync("console.log", "________________");
+            string pattern = @"([A-Z]+[0-9]+)";
+            MatchCollection matches = Regex.Matches(UserInput, pattern);
+            foreach (Match match in matches)
+            {
+                JSRuntime.InvokeVoidAsync("console.log", "@ " + match.Value);
+                Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
+                JSRuntime.InvokeVoidAsync("console.log", "@ " + (Home.Sheet.GetCell(match.Value).Value));
+            }
             Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
+
+            await JSRuntime.InvokeVoidAsync("inputChanged");
             UserInput = Cell.Value;
+
             StateHasChanged();
         }
         else if (e.Key == "Escape")
@@ -57,19 +69,7 @@ id="@Cell.Address" />
 
     private void OnInputBlur()
     {
-        JSRuntime.InvokeVoidAsync("console.log", "________________");
-        string pattern = @"([A-Z]+[0-9]+)";
-        MatchCollection matches = Regex.Matches(UserInput, pattern);
-        foreach (Match match in matches)
-        {
-            JSRuntime.InvokeVoidAsync("console.log", "@ "+match.Value);
-            Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
-            JSRuntime.InvokeVoidAsync("console.log", "@ " + (Home.Sheet.GetCell(match.Value).Value));
-        }
-        Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
-        UserInput = Cell.Value;
 
-        StateHasChanged();
     }
     private bool IsFormula => Cell.Formula.StartsWith("=");
 
