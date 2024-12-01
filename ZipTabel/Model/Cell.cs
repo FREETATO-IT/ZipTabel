@@ -77,9 +77,8 @@ namespace ZipTabel.Model
                 Value = ExcelFormulaEvaluator.ParseFormula(Formula, Dependencies);
                 HasError = false;
             }
-            catch
-            {
-                Value = "ERROR";
+            catch(Exception ex) {
+                Value = ex.Message.ToString();
                 HasError = true;
             }
         }
@@ -105,13 +104,14 @@ namespace ZipTabel.Model
             if (!string.IsNullOrEmpty(Formula))
             {
                 var parsedDependencies = RangeParser.ParseAddressFormula(Formula).ToList();
+                Console.WriteLine("parsedDependencies");
                 foreach (var depAddress in parsedDependencies)
                 {
                     var dependencyCell = Home.Sheet.GetCell(depAddress); // Метод для получения ячейки
-                    if (dependencyCell != null)
+                    if (dependencyCell != null && dependencyCell.Value!="")
                     {
                         Dependencies.Add(dependencyCell);
-                        dependencyCell.Dependents.Add(this); // Добавляем зависимость
+                        dependencyCell.Dependents.Add(this); 
                     }
                 }
             }

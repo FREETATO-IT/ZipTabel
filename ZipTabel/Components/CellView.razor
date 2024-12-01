@@ -33,11 +33,10 @@
 
     private void CellPropertyChanged(object sender, PropertyChangedEventArgs e)
     {
-        // Проверяем, какое свойство изменилось
         if (e.PropertyName == nameof(Cell.Value))
         {
-            UserInput = Cell.Value; // Обновляем отображение
-            StateHasChanged(); // Сообщаем Blazor об изменениях
+            UserInput = Cell.Value;
+            StateHasChanged();
         }
     }
 
