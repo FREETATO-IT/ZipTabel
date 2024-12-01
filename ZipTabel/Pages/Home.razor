@@ -95,145 +95,145 @@
     let previousInput = null;
 
     function checkFirstCharacter(inputElement) {
-        const value = inputElement.value; // Получаем текущее значение поля ввода
-        const inputElements = document.querySelectorAll(".input-cell");
+    const value = inputElement.value; // Получаем текущее значение поля ввода
+    const inputElements = document.querySelectorAll(".input-cell");
 
-        if (value.charAt(0) === "=") {
-            console.log(`Первый символ в элементе с id ${inputElement.id} равен '='`);
+    if (value.charAt(0) === "=") {
+    console.log(`Первый символ в элементе с id ${inputElement.id} равен '='`);
 
-            previousInput = inputElement.id;
+    previousInput = inputElement.id;
 
-            // Уведомляем Blazor, если первый символ равен "="
-            //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
-            inputElements.forEach(el => {
-                if (el !== inputElement) {
-                    /* el.readOnly = true */; // Отключаем все, кроме текущего
-                }
-            });
-        } else {
-            inputElements.forEach(el => {
-                el.readOnly = false; // Отключаем все, кроме текущего
-            });
-            console.log(`Первый символ в элементе с id ${inputElement.id} не равен '='`);
-        }
+    // Уведомляем Blazor, если первый символ равен "="
+    //DotNet.invokeMethodAsync('ВашеИмя_Проекта', 'OnEqualsDetected', inputElement.id);
+    inputElements.forEach(el => {
+    if (el !== inputElement) {
+    /* el.readOnly = true */; // Отключаем все, кроме текущего
+    }
+    });
+    } else {
+    inputElements.forEach(el => {
+    el.readOnly = false; // Отключаем все, кроме текущего
+    });
+    console.log(`Первый символ в элементе с id ${inputElement.id} не равен '='`);
+    }
     }
 
     // Инициализация обработчика события input на всех элементах
     function initInputChecks() {
-        const inputElements = document.querySelectorAll(".input-cell"); // Замените на ваш класс
-        inputElements.forEach(function(inputElement) {
-            inputElement.addEventListener("input", function() {
-                checkFirstCharacter(inputElement);
-            });
-        });
+    const inputElements = document.querySelectorAll(".input-cell"); // Замените на ваш класс
+    inputElements.forEach(function(inputElement) {
+    inputElement.addEventListener("input", function() {
+    checkFirstCharacter(inputElement);
+    });
+    });
     }
 
     // Функция для наблюдения за изменениями в контейнере
     function observeInputChanges(container) {
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === "childList") {
-                    // Если добавлены новые узлы (input элементы)
-                    initInputChecks(); // Переинициализируем обработчики для новых input
-                }
-            });
-        });
+    const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+    if (mutation.type === "childList") {
+    // Если добавлены новые узлы (input элементы)
+    initInputChecks(); // Переинициализируем обработчики для новых input
+    }
+    });
+    });
 
-        observer.observe(container, {
-            childList: true, // Наблюдаем за добавлением/удалением дочерних элементов
-            subtree: true // Наблюдаем за изменениями также и в дочерних узлах
-        });
+    observer.observe(container, {
+    childList: true, // Наблюдаем за добавлением/удалением дочерних элементов
+    subtree: true // Наблюдаем за изменениями также и в дочерних узлах
+    });
     }
 
     // Вызов функций инициализации
     document.addEventListener("DOMContentLoaded", function() {
-        const inputContainer = document.querySelector("#input-container"); // Укажите ваш контейнер с input
-        initInputChecks(); // Инициализируем обработчики для существующих input
-        observeInputChanges(inputContainer); // Начинаем наблюдение за изменениями
+    const inputContainer = document.querySelector("#input-container"); // Укажите ваш контейнер с input
+    initInputChecks(); // Инициализируем обработчики для существующих input
+    observeInputChanges(inputContainer); // Начинаем наблюдение за изменениями
     });
 
     window.initInputHandlers = function(dotnetHelper) {
-        var tableBody = document.querySelector('tbody');
-        var isMouseDown = false; // Переменная для отслеживания состояния мыши
-        var startCell = null; // Ячейка, с которой начинается выделение
-        var endCell = null; // Ячейка, с которой заканчивается выделение
+    var tableBody = document.querySelector('tbody');
+    var isMouseDown = false; // Переменная для отслеживания состояния мыши
+    var startCell = null; // Ячейка, с которой начинается выделение
+    var endCell = null; // Ячейка, с которой заканчивается выделение
 
-        // Обработчик mouseup
-        tableBody.addEventListener('mouseup', function(event) {
-            if (event.target.tagName === 'INPUT') {
-                const elementId = event.target.id;
-                /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
+    // Обработчик mouseup
+    tableBody.addEventListener('mouseup', function(event) {
+    if (event.target.tagName === 'INPUT') {
+    const elementId = event.target.id;
+    /* console.log(`ID до: ${elementId}`); */ // Выводим ID элемента в консоль
 
-                // Возвращаем значение в Blazor
-                dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
-            }
+    // Возвращаем значение в Blazor
+    dotnetHelper.invokeMethodAsync('ReceiveElementEndId', elementId);
+    }
 
-            console.log(previousInput);
-            // if(previousInput != null)
-            //     document.getElementById(previousInput).focus();
+    console.log(previousInput);
+    // if(previousInput != null)
+    //     document.getElementById(previousInput).focus();
 
-            // Завершение выделения
-            isMouseDown = false; // Сбрасываем состояние
-        });
+    // Завершение выделения
+    isMouseDown = false; // Сбрасываем состояние
+    });
 
-        // Обработчик mousedown
-        tableBody.addEventListener('mousedown', function(event) {
-            if (event.target.tagName === 'INPUT') {
+    // Обработчик mousedown
+    tableBody.addEventListener('mousedown', function(event) {
+    if (event.target.tagName === 'INPUT') {
 
-                const elementId = event.target.id;
-                /* console.log(`ID от: ${elementId}`);  */// Выводим ID элемента в консоль
+    const elementId = event.target.id;
+    /* console.log(`ID от: ${elementId}`);  */// Выводим ID элемента в консоль
 
-                // Возвращаем значение в Blazor
-                dotnetHelper.invokeMethodAsync('ReceiveElementStartId', elementId);
+    // Возвращаем значение в Blazor
+    dotnetHelper.invokeMethodAsync('ReceiveElementStartId', elementId);
 
-                isMouseDown = true; // Нажали кнопку мыши
-                startCell = event.target.closest('td'); // Определяем начальную ячейку
-                startCell.classList.add('selected'); // Выделяем начальную ячейку
+    isMouseDown = true; // Нажали кнопку мыши
+    startCell = event.target.closest('td'); // Определяем начальную ячейку
+    startCell.classList.add('selected'); // Выделяем начальную ячейку
 
-                Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
-                    cell.classList.remove('selected');
-                });
+    Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+    cell.classList.remove('selected');
+    });
 
-                startCell.classList.add('selected');
-            }
-        });
+    startCell.classList.add('selected');
+    }
+    });
 
-        // Выделение области при перемещении мыши
-        tableBody.addEventListener('mousemove', function(event) {
-            if (isMouseDown && event.target.tagName === 'INPUT') {
-                endCell = event.target.closest('td'); // Определяем конечную ячейку
-                highlightCells(startCell, endCell); // Функция для выделения ячеек
-            }
-        });
+    // Выделение области при перемещении мыши
+    tableBody.addEventListener('mousemove', function(event) {
+    if (isMouseDown && event.target.tagName === 'INPUT') {
+    endCell = event.target.closest('td'); // Определяем конечную ячейку
+    highlightCells(startCell, endCell); // Функция для выделения ячеек
+    }
+    });
 
-        // Функция выделения ячеек
-        function highlightCells(startCell, endCell) {
-            // Убираем выделение со всех ячеек
-            Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
-                cell.classList.remove('selected');
-            });
+    // Функция выделения ячеек
+    function highlightCells(startCell, endCell) {
+    // Убираем выделение со всех ячеек
+    Array.from(tableBody.getElementsByTagName('td')).forEach(cell => {
+    cell.classList.remove('selected');
+    });
 
-            // Получаем индексы начальной и конечной ячеек
-            const startRowIdx = startCell.parentElement.rowIndex - 1;
-            const startColIdx = startCell.cellIndex;
-            const endRowIdx = endCell.parentElement.rowIndex - 1;
-            const endColIdx = endCell.cellIndex;
+    // Получаем индексы начальной и конечной ячеек
+    const startRowIdx = startCell.parentElement.rowIndex - 1;
+    const startColIdx = startCell.cellIndex;
+    const endRowIdx = endCell.parentElement.rowIndex - 1;
+    const endColIdx = endCell.cellIndex;
 
-            const rowStart = Math.min(startRowIdx, endRowIdx);
-            const rowEnd = Math.max(startRowIdx, endRowIdx);
-            const colStart = Math.min(startColIdx, endColIdx);
-            const colEnd = Math.max(startColIdx, endColIdx);
+    const rowStart = Math.min(startRowIdx, endRowIdx);
+    const rowEnd = Math.max(startRowIdx, endRowIdx);
+    const colStart = Math.min(startColIdx, endColIdx);
+    const colEnd = Math.max(startColIdx, endColIdx);
 
-            // Выделяем ячейки в области
-            for (let row = rowStart; row <= rowEnd; row++) {
-                for (let col = colStart; col <= colEnd; col++) {
-                    const cell = tableBody.rows[row].cells[col];
-                    if (cell) {
-                        cell.classList.add('selected'); // Добавляем класс выделения
-                    }
-                }
-            }
-        }
+    // Выделяем ячейки в области
+    for (let row = rowStart; row <= rowEnd; row++) {
+    for (let col = colStart; col <= colEnd; col++) {
+    const cell = tableBody.rows[row].cells[col];
+    if (cell) {
+    cell.classList.add('selected'); // Добавляем класс выделения
+    }
+    }
+    }
+    }
     }
 </script>
 
@@ -275,9 +275,9 @@
 
 
 @code {
-    private List<Cell> SelectedCells = new(); 
+
     private bool IsSelecting = false; // Флаг выбора
-    public Sheet Sheet = new Sheet("Лист1");
+    public  static Sheet Sheet = new Sheet("Лист1");
     private int TotalRows = 30;
     private int TotalCols = 30;
 
@@ -367,14 +367,13 @@
     }
 
 
-    private async Task UpdateSelectedCells(Cell startCell, Cell endCell)
+    private List<ICell> UpdateSelectedCells(Cell startCell, Cell endCell)
     {
+        List<ICell> SelectedCells = new();
         if (startCell.Address == endCell.Address)
         {
-            SelectedCells.Clear();
-            return;
+            return new();
         }
-        SelectedCells.Clear();
 
         var (startRow, startCol) = ParseCellAddress(startCell.Address);
         var (endRow, endCol) = ParseCellAddress(endCell.Address);
@@ -393,7 +392,7 @@
                 SelectedCells.Add(cell);
             }
         }
-
+        return SelectedCells;
     }
     private (int row, int col) ParseCellAddress(string address)
     {

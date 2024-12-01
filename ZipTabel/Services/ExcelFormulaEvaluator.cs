@@ -477,8 +477,7 @@ public static class ExcelFormulaEvaluator
             if (exponent <= 0)
                 return "1";
 
-            // Генерация строки умножений
-            return string.Join("*", new string[exponent].Select(_ => baseNumber.ToString()));
+            return Math.Pow(baseNumber, exponent).ToString();
         });
     }
     private static string ValidateString(string value)
