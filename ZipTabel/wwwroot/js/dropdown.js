@@ -6,7 +6,8 @@ function myFunction() {
 
 // Закройте выпадающее меню, если пользователь щелкает за его пределами
 window.onclick = function (event) {
-    if (!event.target.matches('.dropbtn')) {
+    // Проверяем, был ли клик на элементе с классом 'picker'
+    if (!event.target.matches('.dropbtn') && !event.target.closest('.picker')) {
         var dropdowns = document.getElementsByClassName("dropdown-content");
         var i;
         for (i = 0; i < dropdowns.length; i++) {
@@ -16,4 +17,4 @@ window.onclick = function (event) {
             }
         }
     }
-}
+};
