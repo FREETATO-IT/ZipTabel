@@ -17,6 +17,96 @@ public enum MatchType
     SmallestGreaterThanOrEqual = -1  // Наименьшее значение >= lookupValue (массив по убыванию)
 }
 
+public static class ExcelFormulaEvaluatorDependencies
+{
+    public static IEnumerable<string> ParseAddressFormula(string formula)
+    {
+        string rangePattern = @"([A-Z]+[0-9]+:[A-Z]+[0-9]+)";
+        string cellPattern = @"([A-Z]+[0-9]+)";
+
+        IEnumerable<string> matches = new List<string>();
+
+        foreach (Match match in Regex.Matches(formula, cellPattern))
+        {
+            matches.Append(match.Value);
+        }
+
+        foreach (Match match in Regex.Matches(formula, rangePattern))
+        {
+            if (!matches.Contains(match.Value))
+            {
+
+                foreach(var item in GetAddresssInRange(match.Value))
+                {
+                    matches.Append(item);
+                }
+                
+                    
+            }
+        }
+
+        string[] resultArray = matches.ToArray();
+
+        Console.WriteLine("Совпадения:");
+        foreach (var match in resultArray)
+        {
+            Console.WriteLine(match);
+        }
+        return matches;
+    }
+    private static string[] GetAddresssInRange(string range)
+    {
+        var match = Regex.Match(range, "(?<StartColumn>[A-Z]+)(?<StartRow>\\d+):(?<EndColumn>[A-Z]+)(?<EndRow>\\d+)");
+        if (!match.Success)
+        {
+            return [];
+        }
+
+        string startColumn = match.Groups["StartColumn"].Value;
+        int startRow = int.Parse(match.Groups["StartRow"].Value);
+        string endColumn = match.Groups["EndColumn"].Value;
+        int endRow = int.Parse(match.Groups["EndRow"].Value);
+
+        if (string.Compare(startColumn, endColumn) > 0)
+        {
+            string tempColumn = startColumn;
+            startColumn = endColumn;
+            endColumn = tempColumn;
+
+            int tempRow = startRow;
+            startRow = endRow;
+            endRow = tempRow;
+        }
+
+        if (startRow > endRow)
+        {
+            int tempRow = startRow;
+            startRow = endRow;
+            endRow = tempRow;
+        }
+
+        var res = range
+            .Where(cell => IsInRange(Convert.ToString(cell), startColumn, startRow, endColumn, endRow))
+            .Select(cell => cell).Select(cell => Convert.ToString(cell))
+    .ToArray();
+        return res;
+
+    }
+    private static bool IsInRange(string address, string startColumn, int startRow, string endColumn, int endRow)
+    {
+        var match = Regex.Match(address, "(?<Column>[A-Z]+)(?<Row>\\d+)");
+        if (!match.Success) return false;
+
+        string column = match.Groups["Column"].Value;
+        int row = int.Parse(match.Groups["Row"].Value);
+
+        return string.Compare(column, startColumn, StringComparison.OrdinalIgnoreCase) >= 0 &&
+               string.Compare(column, endColumn, StringComparison.OrdinalIgnoreCase) <= 0 &&
+               row >= startRow &&
+               row <= endRow;
+    }
+}
+
 public static class ExcelFormulaEvaluator
 {
     private static readonly Dictionary<string, Func<string[], List<ICell>, string>> formulaHandlers = new()
