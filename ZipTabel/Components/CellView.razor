@@ -57,14 +57,12 @@
 
             Buffer = UserInput;
             IsEditing = false;
-            Style = string.Empty;
             StateHasChanged();
         }
         else if (e.Key == "Escape")
         {
             UserInput = Buffer;
             IsEditing = false;
-            Style = string.Empty;
             StateHasChanged();
         }
     }
@@ -125,7 +123,6 @@
 
         Buffer = UserInput;
         IsEditing = true;
-        Style = "color: blue;";
         StateHasChanged();
     }
 
