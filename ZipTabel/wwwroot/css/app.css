@@ -112,3 +112,21 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+
+
+.border-top {
+    border-top: 2px solid red;
+}
+
+.border-bottom {
+    border-bottom: 2px solid red;
+}
+
+.border-left {
+    border-left: 2px solid red;
+}
+
+.border-right {
+    border-right: 2px solid green;
+}

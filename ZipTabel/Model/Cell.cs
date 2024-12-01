@@ -1,37 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using ZipTabel.Interfaces;
+using ZipTabel.Pages;
 using ZipTabel.Services;
 
 namespace ZipTabel.Model
 {
-    public class Cell : ICell
+    public class Cell : ICell, INotifyPropertyChanged
     {
-        public string Address { get; private set; }
-
-        public string CellBeckground="#FFFFF";
+        public event PropertyChangedEventHandler PropertyChanged;
 
         private string _value = string.Empty;
-        private List<CharSettings> _charSettings = new List<CharSettings>(); // Список настроек для каждого символа
+        private string _formula = string.Empty;
+
+        public bool IsFormula { get; set; } = false;
+        public string Address { get; private set; }
+        public string CellBackground { get; set; } = "#FFFFF";
+        public string CellForeground { get; set; } = "#FFFFF";
+        public bool HasError { get; private set; }
+        public bool IsLocked { get; set; }
+
+        public List<ICell> Dependencies { get; set; }
+        public List<ICell> Dependents { get; set; }
 
         public string Value
         {
             get => _value;
             set
             {
-                _value = value;
-                // Обновление настроек для каждого символа
-                _charSettings = new List<CharSettings>(new CharSettings[value.Length].Select(_ => new CharSettings()));
-                NotifyDependents(); // Обновить зависимые ячейки
+                if (_value != value)
+                {
+                    _value = value;
+                    OnPropertyChanged(nameof(Value));
+                    NotifyDependents(); // Уведомляем зависимые ячейки
+                }
             }
         }
 
-        public string Formula { get; set; } = string.Empty;
-        public bool HasError { get; private set; }
-        public List<ICell> Dependencies { get; private set; }
-        public List<ICell> Dependents { get; private set; }
-        public bool IsLocked { get; set; }
+        public string Formula
+        {
+            get => _formula;
+            set
+            {
+                if (_formula != value)
+                {
+                    _formula = value;
+                    OnPropertyChanged(nameof(Formula));
+                    UpdateDependencies(); // Обновляем зависимости
+                    Recalculate(); // Пересчитываем значение
+                }
+            }
+        }
 
         public Cell(string address)
         {
@@ -41,20 +62,23 @@ namespace ZipTabel.Model
             IsLocked = false;
         }
 
-        // Метод пересчёта значения
+        public bool IsEmpty()
+        {
+            return string.IsNullOrEmpty(Formula) && string.IsNullOrEmpty(Value);
+        }
+
         public void Recalculate()
         {
+            Console.WriteLine($"Recalculating {Address}...");
             if (string.IsNullOrEmpty(Formula)) return;
 
             try
             {
-                var parser = new FormulaParser();
-                Value = parser.Evaluate(Formula, Dependencies);
+                Value = ExcelFormulaEvaluator.ParseFormula(Formula, Dependencies);
                 HasError = false;
             }
-            catch
-            {
-                Value = "ERROR";
+            catch(Exception ex) {
+                Value = ex.Message.ToString();
                 HasError = true;
             }
         }
@@ -67,41 +91,35 @@ namespace ZipTabel.Model
             }
         }
 
-        public string GetCharColor(int index)
+        private void UpdateDependencies()
         {
-            return _charSettings[index].Color;
-        } 
-        public void SetCharColor(int index,string hex)
-        {
-             _charSettings[index].Color = hex;
-        } 
-        public int GetCharSize(int index)
-        {
-            return _charSettings[index].FontSize;
-        } 
-        public void SetCharSize(int index,int size)
-        {
-             _charSettings[index].FontSize = size;
-        }
-
-        public void SetCharSettings(int index, string color, int fontSize, string fontFamily)
-        {
-            if (index >= 0 && index < _charSettings.Count)
+            // Очистка текущих зависимостей
+            foreach (var dependency in Dependencies)
             {
-                var charSetting = _charSettings[index];
-                charSetting.Color = color;
-                charSetting.FontSize = fontSize;
-                charSetting.FontFamily = fontFamily;
+                dependency.Dependents.Remove(this);
+            }
+            Dependencies.Clear();
+
+            // Получение новых зависимостей из формулы
+            if (!string.IsNullOrEmpty(Formula))
+            {
+                var parsedDependencies = RangeParser.ParseAddressFormula(Formula).ToList();
+                Console.WriteLine("parsedDependencies");
+                foreach (var depAddress in parsedDependencies)
+                {
+                    var dependencyCell = Home.Sheet.GetCell(depAddress); // Метод для получения ячейки
+                    if (dependencyCell != null && dependencyCell.Value!="")
+                    {
+                        Dependencies.Add(dependencyCell);
+                        dependencyCell.Dependents.Add(this); 
+                    }
+                }
             }
         }
 
-        public CharSettings GetCharSettings(int index)
+        protected void OnPropertyChanged(string propertyName)
         {
-            if (index >= 0 && index < _charSettings.Count)
-            {
-                return _charSettings[index];
-            }
-            return new CharSettings(); 
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

@@ -1,68 +1,111 @@
-﻿@inject IJSRuntime JsRuntime
-@using ZipTabel.Model
+﻿@using System.Text.Json
+@using System.ComponentModel
+@inject IJSRuntime JSRuntime
 
-<div @ondblclick="OnCellDoubleClick"  style="border: 1px solid black; padding: 5px; width: 100px; height: 30px;">
-    @if (IsFormula)
-    {
-        <span style="color: blue;">@Cell.Formula</span>
-    }
-    else
-    {
-        @foreach (var (charValue, index) in Cell.Value?.Select((c, i) => (c, i)) ?? Enumerable.Empty<(char, int)>())
-        {
-            <span  style="color: @(Cell.GetCharColor(index)); font-size: @(Cell.GetCharSize(index))px;">
-                @charValue
-            </span>
-        }
-    }
-</div>
-
-<input @oninput="HandleInputChange" @ondblclick="OnCellDoubleClick" style="margin-top: 10px; width: 100px;" placeholder="Enter value" id="userInput" />
+<input @onkeyup="HandleKeyDown"
+       @onblur="OnInputBlur"
+       @onfocus="OnInputFocus"
+       @bind-value="@UserInput"
+       class="input-cell @EditingClass"
+       id="@Cell.Address" />
 
 @code {
     [Parameter] public Cell Cell { get; set; }
+    private string userInput = string.Empty;
+    private string Buffer { get; set; } = string.Empty;
+    private bool IsEditing { get; set; } = false;
 
-    private string UserInput ;
-    private bool IsEditing = false;  
-    private bool IsFormula => !string.IsNullOrEmpty(UserInput) && UserInput.StartsWith("=");
-
-    protected override async Task OnInitializedAsync()
+    public string UserInput
     {
-        UserInput = Cell.Value;
-    }
- 
-    private async void OnCellDoubleClick()
-    {
-        IsEditing = true;
-
-        if (String.IsNullOrEmpty(Cell.Value))
+        get => userInput;
+        set
         {
-            Cell.Formula = "=";
+            userInput = value;
         }
-
-        if (!string.IsNullOrEmpty(Cell.Formula) && Cell.Formula[0] != '=')
-        {
-            Cell.Formula = "=" + Cell.Formula; 
-        }
-
-        UserInput = Cell.Formula;
     }
 
-
-    private void HandleInputChange(ChangeEventArgs e)
+    protected override void OnInitialized()
     {
-        UserInput = e.Value.ToString();
-        if (IsFormula)
+        // Подписка на событие PropertyChanged
+        Cell.PropertyChanged += CellPropertyChanged;
+        UserInput = Cell.Value; // Устанавливаем начальное значение
+    }
+
+    private void CellPropertyChanged(object sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Cell.Value))
         {
-            Cell.Formula = UserInput;
-            Cell.Recalculate();
+            UserInput = Cell.Value;
+            StateHasChanged();
+        }
+    }
+
+    private async void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await JSRuntime.InvokeVoidAsync("inputChanged");
+            bool wasFormula = Cell.IsFormula;
+
+            if (string.IsNullOrWhiteSpace(UserInput))
+            {
+                if (wasFormula)
+                {
+                    Console.WriteLine($"Cell {Cell.Address} is no longer a formula. Previous formula: {Cell.Formula}");
+                }
+                Cell.IsFormula = false;
+                Cell.Formula = string.Empty;
+                Cell.Value = string.Empty;
+                UserInput = string.Empty;
+            }
+            else if (UserInput.StartsWith("="))
+            {
+                Cell.IsFormula = true;
+                Cell.Formula = UserInput; // Устанавливаем новую формулу
+            }
+            else
+            {
+                if (wasFormula)
+                {
+                    Console.WriteLine($"Cell {Cell.Address} is no longer a formula. Previous formula: {Cell.Formula}");
+                }
+                Cell.IsFormula = false;
+                Cell.Formula = string.Empty;
+                Cell.Value = UserInput; // Устанавливаем новое значение
+            }
+
+            Buffer = UserInput;
+            IsEditing = false;
+            StateHasChanged();
+        }
+        else if (e.Key == "Escape")
+        {
+            UserInput = Buffer;
+            IsEditing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnInputBlur()
+    {
+        if (!Cell.IsFormula)
+        {
+            Cell.Value = UserInput; // Обновляем значение ячейки
         }
         else
         {
-            Cell.Value = UserInput;
+            UserInput = Cell.Value; // Возвращаемся к формуле
         }
+        IsEditing = false;
+        StateHasChanged();
+    }
 
-        IsEditing = false;  
+    private void OnInputFocus(FocusEventArgs e)
+    {
+        UserInput = Cell.IsFormula ? Cell.Formula : Cell.Value;
+        Buffer = UserInput;
+        IsEditing = true;
+        StateHasChanged();
     }
 
     private string EditingClass => IsEditing ? "editing" : string.Empty;
