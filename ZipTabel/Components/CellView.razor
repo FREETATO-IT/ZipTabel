@@ -4,36 +4,21 @@
 @using ZipTabel.Pages
 @inject IJSRuntime JSRuntime
 <input @onkeyup="HandleKeyDown"
-@onblur="OnInputBlur"
-@onfocus="OnInputFocus"
-@bind-value="@UserInput"
-style="@Style"
-class="input-cell @EditingClass"
-id="@Cell.Address" />
+       @onblur="OnInputBlur"
+       @onfocus="OnInputFocus"
+       @bind-value="@UserInput"
+       class="input-cell @EditingClass"
+       id="@Cell.Address" />
 @code {
     [Parameter] public Cell Cell { get; set; }
-    [Parameter] public string Style { get; set; }
     private string userInput = string.Empty;
-
     public string UserInput
     {
         get { return userInput; }
         set
         {
             userInput = value;
-            CheckFirstCharacter(); // Метод для проверки первого символа
         }
-    }
-
-    private void CheckFirstCharacter()
-    {
-        // Console.WriteLine(userInput);
-        // if (!string.IsNullOrEmpty(userInput) && userInput[0] != '=')
-        // {
-        //     Cell.IsFormula = false;
-        //     Cell.Formula = "";
-        //     Cell.Value = UserInput;
-        // }
     }
     private string Buffer { get; set; } = string.Empty;
     private bool IsEditing { get; set; } = false;
@@ -41,7 +26,6 @@ id="@Cell.Address" />
     protected override void OnInitialized()
     {
         Cell.Value = UserInput;
-     
     }
 
     private async void HandleKeyDown(KeyboardEventArgs e)
@@ -50,26 +34,31 @@ id="@Cell.Address" />
         {
             await JSRuntime.InvokeVoidAsync("inputChanged");
 
-            Console.WriteLine("UserInput");
-            Console.WriteLine(UserInput);
-            Console.WriteLine("Buffer");
-            Console.WriteLine(Buffer);
-            Console.WriteLine("Cell.Formula");
-            Console.WriteLine(Cell.Formula);
-            Console.WriteLine("Cell.Value");
-            Console.WriteLine(Cell.Value);
-            if (UserInput.StartsWith("="))
+            if (string.IsNullOrWhiteSpace(UserInput))
+            {
+                Cell.IsFormula = false;
+                Cell.Formula = string.Empty;
+                Cell.Value = string.Empty;
+                UserInput = string.Empty;
+            }
+            else if (UserInput.StartsWith("="))
             {
                 Cell.IsFormula = true;
                 Cell.Formula = UserInput;
                 Console.WriteLine("Запуск OnCalculate");
                 OnCalculate();
             }
-            else Cell.IsFormula = false;
-            Cell.Value = UserInput;
+            else
+            {
+                Cell.IsFormula = false;
+                Cell.Formula = string.Empty;
+                Cell.Value = UserInput;
+            }
+
+            Buffer = UserInput;
             IsEditing = false;
             Style = string.Empty;
-
+            StateHasChanged();
         }
         else if (e.Key == "Escape")
         {
@@ -80,17 +69,20 @@ id="@Cell.Address" />
         }
     }
 
-    private void OnCalculate(){
+    private void OnCalculate()
+    {
         try
         {
+            Cell.Dependents.Clear();
+
             string pattern = @"([A-Z]+[0-9]+)";
             MatchCollection matches = Regex.Matches(UserInput, pattern);
             foreach (Match match in matches)
             {
                 Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
             }
-            Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
 
+            Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
             UserInput = Cell.Value;
         }
         catch (Exception ex)
@@ -102,27 +94,41 @@ id="@Cell.Address" />
 
     private void OnInputBlur()
     {
-        if (Cell.IsFormula)
+        if (string.IsNullOrWhiteSpace(UserInput))
         {
-            if (!Cell.Formula.StartsWith("=")) Cell.IsFormula = false;
-            else UserInput = Cell.Value;
+            Cell.IsFormula = false;
+            Cell.Formula = string.Empty;
+            Cell.Value = string.Empty;
+        }
+        else if (!Cell.IsFormula)
+        {
+            Cell.Value = UserInput;
         }
         else
         {
+            UserInput = Cell.Value;
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnInputFocus(FocusEventArgs e)
+    {
+        if (Cell.IsFormula)
+        {
             UserInput = Cell.Formula;
         }
-        
+        else
+        {
+            UserInput = Cell.Value;
+        }
+
+        Buffer = UserInput;
+        IsEditing = true;
+        Style = "color: blue;";
+        StateHasChanged();
     }
 
     private bool IsFormula => Cell.Formula.StartsWith("=");
     private string EditingClass => IsEditing ? "editing" : string.Empty;
-    private void OnInputFocus(FocusEventArgs e)
-    {
-        if(Cell.IsFormula){
-            if (!Cell.Formula.StartsWith("=")) Cell.IsFormula = false;
-            else UserInput = Cell.Formula;
-        }else{
-            UserInput = Cell.Value;
-        }
-    }
 }
