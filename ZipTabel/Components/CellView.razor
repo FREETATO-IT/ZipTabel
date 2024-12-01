@@ -76,6 +76,7 @@ id="@Cell.Address" />
     }
     public void OnCalculate()
     {
+
         try
         {
             Cell.Value = "";
@@ -84,11 +85,12 @@ id="@Cell.Address" />
             foreach (var item in res)
             {
                 var _cell = Home.Sheet.GetCell(item);
+                Console.WriteLine(JsonSerializer.Serialize(_cell));
                 Cell.Dependents.Add(_cell);
-                _cell.Dependencies.Add(Cell);
             }
-            Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
-            UserInput = Cell.Value;
+
+            UserInput = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
+            Cell.Value = UserInput;
         }
         catch (Exception ex)
         {
