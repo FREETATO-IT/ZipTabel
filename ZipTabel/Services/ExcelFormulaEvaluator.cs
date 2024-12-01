@@ -3,6 +3,7 @@ using System.Data;
 using System.Text.RegularExpressions;
 using ZipTabel.Interfaces;
 using System.Collections.Generic;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
 
 
 public enum MatchType
@@ -43,7 +44,10 @@ public static class ExcelFormulaEvaluator
     /// <exception cref="NotSupportedException">Выбрасывается, если формула не поддерживается или содержит недопустимые операции.</exception>
     public static string ParseFormula(string formula, List<ICell> dependencies)
     {
-        if (formula.All(c => c == '='))
+
+        //^= (? !.* (?< ! [<>!=]) =)(.*)$
+        var matches = Regex.IsMatch(formula, "^=(?!.*(?<![<>!=])=)(.*)$");
+        if (!matches)
         {
             return string.Empty; 
         }

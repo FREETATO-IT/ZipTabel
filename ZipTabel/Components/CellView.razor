@@ -1,79 +1,128 @@
 ﻿@using System.Timers
 @using System.Text.RegularExpressions
+@using System.Text.Json
 @using ZipTabel.Pages
 @inject IJSRuntime JSRuntime
-<input @oninput="HandleInputChange"
-@ondblclick="OnCellDoubleClick"
-@onkeyup="HandleKeyDown"
+<input @onkeyup="HandleKeyDown"
 @onblur="OnInputBlur"
+@onfocus="OnInputFocus"
 @bind-value="@UserInput"
 style="@Style"
 class="input-cell @EditingClass"
 id="@Cell.Address" />
-
 @code {
     [Parameter] public Cell Cell { get; set; }
     [Parameter] public string Style { get; set; }
-    private string UserInput { get; set; } = string.Empty;
+    private string userInput = string.Empty;
 
+    public string UserInput
+    {
+        get { return userInput; }
+        set
+        {
+            userInput = value;
+            CheckFirstCharacter(); // Метод для проверки первого символа
+        }
+    }
+
+    private void CheckFirstCharacter()
+    {
+        // Console.WriteLine(userInput);
+        // if (!string.IsNullOrEmpty(userInput) && userInput[0] != '=')
+        // {
+        //     Cell.IsFormula = false;
+        //     Cell.Formula = "";
+        //     Cell.Value = UserInput;
+        // }
+    }
     private string Buffer { get; set; } = string.Empty;
-
-    private bool IsEditing = false;
+    private bool IsEditing { get; set; } = false;
 
     protected override void OnInitialized()
     {
-        UserInput = Cell.Value;
-    }
-
-    private async Task HandleInputChange(ChangeEventArgs e)
-    {
-
+        Cell.Value = UserInput;
+     
     }
 
     private async void HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            JSRuntime.InvokeVoidAsync("console.log", "________________");
-            string pattern = @"([A-Z]+[0-9]+)";
-            MatchCollection matches = Regex.Matches(UserInput, pattern);
-            foreach (Match match in matches)
-            {
-                JSRuntime.InvokeVoidAsync("console.log", "@ " + match.Value);
-                Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
-                JSRuntime.InvokeVoidAsync("console.log", "@ " + (Home.Sheet.GetCell(match.Value).Value));
-            }
-            Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
-
             await JSRuntime.InvokeVoidAsync("inputChanged");
-            UserInput = Cell.Value;
 
-            StateHasChanged();
+            Console.WriteLine("UserInput");
+            Console.WriteLine(UserInput);
+            Console.WriteLine("Buffer");
+            Console.WriteLine(Buffer);
+            Console.WriteLine("Cell.Formula");
+            Console.WriteLine(Cell.Formula);
+            Console.WriteLine("Cell.Value");
+            Console.WriteLine(Cell.Value);
+            if (UserInput.StartsWith("="))
+            {
+                Cell.IsFormula = true;
+                Cell.Formula = UserInput;
+                Console.WriteLine("Запуск OnCalculate");
+                OnCalculate();
+            }
+            else Cell.IsFormula = false;
+            Cell.Value = UserInput;
+            IsEditing = false;
+            Style = string.Empty;
+
         }
         else if (e.Key == "Escape")
         {
+            UserInput = Buffer;
+            IsEditing = false;
+            Style = string.Empty;
             StateHasChanged();
         }
     }
 
-    private void OnCellDoubleClick()
-    {
-        if (string.IsNullOrEmpty(Cell.Formula)){
-            Cell.Formula = "=";
-        }
+    private void OnCalculate(){
+        try
+        {
+            string pattern = @"([A-Z]+[0-9]+)";
+            MatchCollection matches = Regex.Matches(UserInput, pattern);
+            foreach (Match match in matches)
+            {
+                Cell.Dependents.Add(Home.Sheet.GetCell(match.Value));
+            }
+            Cell.Value = ExcelFormulaEvaluator.ParseFormula(UserInput, Cell.Dependents);
 
-        Style = "color: blue;";
-        IsEditing = true;
-        Buffer = UserInput;
-        UserInput = Cell.Formula;
+            UserInput = Cell.Value;
+        }
+        catch (Exception ex)
+        {
+            Cell.Value = ex.Message;
+        }
         StateHasChanged();
     }
 
     private void OnInputBlur()
     {
-
+        if (Cell.IsFormula)
+        {
+            if (!Cell.Formula.StartsWith("=")) Cell.IsFormula = false;
+            else UserInput = Cell.Value;
+        }
+        else
+        {
+            UserInput = Cell.Formula;
+        }
+        
     }
-    private bool IsFormula => Cell.Formula.StartsWith("=");
 
+    private bool IsFormula => Cell.Formula.StartsWith("=");
     private string EditingClass => IsEditing ? "editing" : string.Empty;
+    private void OnInputFocus(FocusEventArgs e)
+    {
+        if(Cell.IsFormula){
+            if (!Cell.Formula.StartsWith("=")) Cell.IsFormula = false;
+            else UserInput = Cell.Formula;
+        }else{
+            UserInput = Cell.Value;
+        }
+    }
 }

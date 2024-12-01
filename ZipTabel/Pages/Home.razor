@@ -308,8 +308,29 @@
     public  static Sheet Sheet = new Sheet("Лист1");
     private int TotalRows = 30;
     private int TotalCols = 30;
+    private string start = "";
+    private string end = "";
 
-    public string Start = "", End = "";
+    public string Start
+    {
+        get { return start; }
+        set
+        {
+            start = value;
+
+        }
+    }
+
+    public string End
+    {
+        get { return end; }
+        set
+        {
+            end = value;
+
+        }
+    }
+
 
     [JSInvokable("YourBlazorMethodForVerticalScroll")]
     public void YourBlazorMethodForVerticalScroll()
@@ -440,6 +461,33 @@
         }
 
         return (row, col);
+    }
+    private async Task OnPoastRangeNumbers(){
+
+        if(Start[0]==End[0]){
+
+            var rangeEllements = UpdateSelectedCells(Sheet.GetCell(Start), Sheet.GetCell(End));
+
+            foreach (var item in rangeEllements)
+            {
+                
+            }
+
+        }
+    }
+    private bool IsAscending(IEnumerable<Cell> rangeElements)
+    {
+        var values = rangeElements.Select(cell => Convert.ToInt32(cell.Value)).ToList();
+
+        for (int i = 1; i < values.Count; i++)
+        {
+            if (values[i] <= values[i - 1])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
